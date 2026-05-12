@@ -287,9 +287,21 @@ const PASOS = [
     ]
   },
   {
+    id: 'skus',
+    pregunta: '¿Cuántos productos / SKUs manejan aproximadamente?',
+    hint: 'Este es el calificador clave. Con +300 SKUs el sistema les genera valor inmediato.',
+    opciones: [
+      { emoji: '📦', label: 'Menos de 100 productos' },
+      { emoji: '📦', label: '100 a 300 productos' },
+      { emoji: '🏆', label: 'Más de 300 productos' },
+      { emoji: '❓', label: 'No sabe / no quiso decir' },
+    ],
+    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora']
+  },
+  {
     id: 'sistema_actual',
     pregunta: '¿Cómo manejan sus pedidos actualmente?',
-    hint: 'Si respondió: pregúntale cómo lleva el control de pedidos y ventas hoy.',
+    hint: 'Con más de 300 productos en Excel o WhatsApp, el caos es inevitable.',
     opciones: [
       { emoji: '📊', label: 'Excel / hojas de cálculo' },
       { emoji: '📱', label: 'WhatsApp / llamadas' },
@@ -301,7 +313,7 @@ const PASOS = [
   {
     id: 'pedidos_mes',
     pregunta: '¿Cuántos pedidos manejan al mes aproximadamente?',
-    hint: 'Esto nos ayuda a dimensionar el ROI. Un número aproximado está bien.',
+    hint: 'Esto nos ayuda a calcular el ROI exacto. Un número aproximado está bien.',
     opciones: [
       { emoji: '📦', label: 'Menos de 50 pedidos' },
       { emoji: '📦', label: '50 a 200 pedidos' },
@@ -313,11 +325,11 @@ const PASOS = [
   {
     id: 'empleados',
     pregunta: '¿Cuántas personas trabajan en la empresa?',
-    hint: 'Para confirmar que califica como nuestro cliente ideal (5–50 empleados).',
+    hint: 'Solo para dimensionar la operación.',
     opciones: [
-      { emoji: '👥', label: '5 a 10 personas' },
-      { emoji: '👥', label: '10 a 25 personas' },
-      { emoji: '👥', label: '25 a 50 personas' },
+      { emoji: '👥', label: '1 a 5 personas' },
+      { emoji: '👥', label: '5 a 20 personas' },
+      { emoji: '👥', label: '20 a 50 personas' },
       { emoji: '🏢', label: 'Más de 50 personas' },
     ],
     skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora']
@@ -509,10 +521,11 @@ async function guardarLlamada() {
     _row:         currentProspecto._row,
     empresa:      currentProspecto['Empresa'] || currentProspecto['Nombre'],
     ciudad:       currentProspecto['Ciudad']  || '',
-    respondio:    respuestas.respondio    || '',
+    respondio:    respuestas.respondio     || '',
+    skus:         respuestas.skus          || '',
     sistema_actual: respuestas.sistema_actual || '',
-    pedidos_mes:  respuestas.pedidos_mes  || '',
-    empleados:    respuestas.empleados    || '',
+    pedidos_mes:  respuestas.pedidos_mes   || '',
+    empleados:    respuestas.empleados     || '',
     decisor:      respuestas.decisor      || '',
     interes_demo: respuestas.interes_demo || '',
     agendo_demo:  respuestas.agendo_demo  || '',

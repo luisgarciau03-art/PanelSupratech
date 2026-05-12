@@ -94,7 +94,7 @@ def _init_headers(ws, key):
     headers = {
         'prospectos':  ['Nombre', 'Empresa', 'Giro', 'Ciudad', 'Teléfono', 'WhatsApp',
                         'Empleados', 'Estado', 'Origen', 'Fecha', 'Notas'],
-        'llamadas':    ['Timestamp', 'Empresa', 'Respondió', 'Sistema Actual', 'Pedidos/Mes',
+        'llamadas':    ['Timestamp', 'Empresa', 'Respondió', 'SKUs', 'Sistema Actual', 'Pedidos/Mes',
                         'Empleados', 'Decisor', 'Interés Demo', 'Agendó Demo', 'Conclusión', 'Notas'],
         'clientes':    ['Fecha', 'Empresa', 'Giro', 'Ciudad', 'Plan', 'Monto MXN', 'Estado', 'Notas'],
         'seguimiento': ['Empresa', 'Estado Pipeline', 'Próxima Acción', 'Fecha Próximo Contacto',
@@ -442,6 +442,7 @@ def api_guardar_llamada():
             ts,
             d.get('empresa', ''),
             d.get('respondio', ''),
+            d.get('skus', ''),
             d.get('sistema_actual', ''),
             d.get('pedidos_mes', ''),
             d.get('empleados', ''),

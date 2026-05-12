@@ -504,8 +504,12 @@
         <input type="text" id="buscar-llamar" placeholder="🔍 Buscar..." oninput="filtrarTabla('llamar')">
         <select id="filtro-llamar-giro" onchange="filtrarTabla('llamar')">
           <option value="">Todos los giros</option>
-          <option>Ferretería</option><option>Materiales de construcción</option>
-          <option>Consumibles industriales</option><option>Abarrotes</option><option>Otro</option>
+          <option>Ferretería</option><option>Tornillería</option>
+          <option>Materiales de construcción</option><option>Abarrotes / Súper</option>
+          <option>Consumibles industriales</option><option>Refacciones</option>
+          <option>Farmacéutica</option><option>Papelería</option>
+          <option>Electrónica</option><option>Juguetes</option>
+          <option>Veterinaria</option><option>Otro</option>
         </select>
         <span style="font-size:0.8em;color:#8d99ae" id="count-llamar"></span>
       </div>
@@ -532,8 +536,12 @@
         </select>
         <select id="filtro-prosp-giro" onchange="filtrarTabla('prosp')">
           <option value="">Todos los giros</option>
-          <option>Ferretería</option><option>Materiales de construcción</option>
-          <option>Consumibles industriales</option><option>Abarrotes</option><option>Otro</option>
+          <option>Ferretería</option><option>Tornillería</option>
+          <option>Materiales de construcción</option><option>Abarrotes / Súper</option>
+          <option>Consumibles industriales</option><option>Refacciones</option>
+          <option>Farmacéutica</option><option>Papelería</option>
+          <option>Electrónica</option><option>Juguetes</option>
+          <option>Veterinaria</option><option>Otro</option>
         </select>
         <button class="btn btn-ghost" onclick="exportCSV('prosp')">⬇ CSV</button>
       </div>
@@ -624,8 +632,12 @@
       <div class="field"><label>Empresa / Distribuidora *</label><input id="ag-empresa" placeholder="Ferretería García"></div>
       <div class="field"><label>Giro</label>
         <select id="ag-giro">
-          <option>Ferretería</option><option>Materiales de construcción</option>
-          <option>Consumibles industriales</option><option>Abarrotes</option><option>Otro</option>
+          <option>Ferretería</option><option>Tornillería</option>
+          <option>Materiales de construcción</option><option>Abarrotes / Súper</option>
+          <option>Consumibles industriales</option><option>Refacciones</option>
+          <option>Farmacéutica</option><option>Papelería</option>
+          <option>Electrónica</option><option>Juguetes</option>
+          <option>Veterinaria</option><option>Otro</option>
         </select>
       </div>
       <div class="field"><label>Ciudad</label><input id="ag-ciudad" placeholder="Guadalajara"></div>
@@ -688,7 +700,7 @@
       <div class="field"><label>Empresa *</label><input id="cl-empresa" placeholder="Ferretería García"></div>
       <div class="field"><label>Ciudad</label><input id="cl-ciudad" placeholder="Guadalajara"></div>
       <div class="field"><label>Giro</label>
-        <select id="cl-giro"><option>Ferretería</option><option>Materiales de construcción</option><option>Consumibles industriales</option><option>Abarrotes</option><option>Otro</option></select>
+        <select id="cl-giro"><option>Ferretería</option><option>Tornillería</option><option>Materiales de construcción</option><option>Abarrotes / Súper</option><option>Consumibles industriales</option><option>Refacciones</option><option>Farmacéutica</option><option>Papelería</option><option>Electrónica</option><option>Juguetes</option><option>Veterinaria</option><option>Otro</option></select>
       </div>
       <div class="field"><label>Plan</label>
         <select id="cl-plan"><option>Mensual</option><option>Anual</option></select>
