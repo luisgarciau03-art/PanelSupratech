@@ -190,6 +190,8 @@ CATEGORIAS_IMPORTADOR = [
     'Distribuidoras de productos de limpieza',
     'Papelerías mayoristas',
     'Distribuidoras de productos veterinarios',
+    'Distribuidoras de plásticos',
+    'Negocios de plásticos desechables mayoristas',
 ]
 
 def _buscar_negocios(gmaps, categoria, ciudad):
