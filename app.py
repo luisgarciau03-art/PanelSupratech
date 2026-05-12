@@ -180,11 +180,16 @@ _import_job = {
 _import_lock = threading.Lock()
 
 CATEGORIAS_IMPORTADOR = [
-    'Ferreterías distribuidoras',
-    'Distribuidoras materiales de construcción',
-    'Distribuidoras abarrotes',
-    'Distribuidoras consumibles industriales',
-    'Mayoristas distribuidoras',
+    'Ferreterías',
+    'Tornillerías',
+    'Distribuidoras de materiales de construcción',
+    'Distribuidoras de abarrotes',
+    'Distribuidoras de consumibles industriales',
+    'Refaccionarias autopartes',
+    'Mayoristas',
+    'Distribuidoras de productos de limpieza',
+    'Papelerías mayoristas',
+    'Distribuidoras de productos veterinarios',
 ]
 
 def _buscar_negocios(gmaps, categoria, ciudad):
