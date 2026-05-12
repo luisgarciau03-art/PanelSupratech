@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Supratech — Prospectos</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #4361ee;
+      --navy: #1a1a2e;
+      --sidebar: 220px;
+    }
+
+    body { font-family: 'Poppins', sans-serif; background: #f0f2f5; color: #2b2d42; display: flex; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar);
+      background: var(--navy);
+      min-height: 100vh;
+      position: fixed;
+      top: 0; left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-logo .brand { font-size: 1.1em; font-weight: 700; color: #fff; }
+    .sidebar-logo .sub   { font-size: 0.68em; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+    .nav-section { padding: 16px 12px 6px; }
+    .nav-label   { font-size: 0.62em; font-weight: 600; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px; margin-bottom: 6px; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      color: rgba(255,255,255,0.6);
+      font-size: 0.82em;
+      font-weight: 500;
+      transition: all 0.15s;
+      margin-bottom: 2px;
+    }
+    .nav-item:hover   { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+    .nav-item.active  { background: var(--blue); color: #fff; }
+    .nav-item .icon   { font-size: 1.1em; width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.8);
+      font-size: 0.7em;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 10px;
+    }
+    .nav-item.active .nav-badge { background: rgba(255,255,255,0.2); color: #fff; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .btn-llamar {
+      display: block;
+      background: #f4a422;
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.82em;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      width: 100%;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-llamar:hover { background: #d48806; }
+
+    /* ── MAIN ── */
+    .main {
+      margin-left: var(--sidebar);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: #fff;
+      padding: 14px 28px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .topbar h2 { font-size: 1em; font-weight: 700; color: var(--navy); }
+    .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      font-family: inherit;
+      font-size: 0.8em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-primary  { background: var(--blue); color: #fff; }
+    .btn-primary:hover { background: #3451d1; }
+    .btn-ghost    { background: #f0f2f5; color: #374151; }
+    .btn-ghost:hover { background: #e5e7eb; }
+    .btn-success  { background: #28a745; color: #fff; }
+    .btn-success:hover { background: #218838; }
+
+    /* ── SECTIONS ── */
+    .section { display: none; padding: 24px 28px; }
+    .section.active { display: block; }
+
+    /* ── STAT CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      text-align: center;
+    }
+    .stat-card .num { font-size: 2.2em; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .stat-card .lbl { font-size: 0.73em; color: #8d99ae; font-weight: 500; }
+
+    /* ── CHARTS ── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 700px)  { .charts-grid { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .chart-card h3 { font-size: 0.82em; font-weight: 700; color: #8d99ae; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+    .chart-card canvas { max-height: 200px; }
+
+    /* ── TABLE CARD ── */
+    .table-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .table-toolbar {
+      padding: 14px 20px;
+      border-bottom: 1px solid #f5f5f5;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .table-toolbar input, .table-toolbar select {
+      padding: 7px 12px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.8em;
+      outline: none;
+    }
+    .table-toolbar input { flex: 1; min-width: 180px; }
+    .table-toolbar input:focus, .table-toolbar select:focus { border-color: var(--blue); }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83em;
+    }
+
+    th {
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 0.72em;
+      font-weight: 600;
+      color: #8d99ae;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: #fafafa;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    th:hover { color: var(--blue); }
+
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid #f8f8f8;
+      vertical-align: middle;
+      color: #374151;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbff; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-por_llamar  { background: #fff8e6; color: #d48806; }
+    .badge-contactado  { background: #e8edff; color: var(--blue); }
+    .badge-interesado  { background: #f0e8ff; color: #7c3aed; }
+    .badge-demo        { background: #fce7f3; color: #be185d; }
+    .badge-cliente     { background: #ecfdf5; color: #059669; }
+    .badge-no_interesa { background: #f3f4f6; color: #6b7280; }
+    .badge-buzon       { background: #f3f4f6; color: #9ca3af; }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.73em;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: none;
+      transition: all 0.15s;
+      margin-right: 4px;
+    }
+    .ab-call { background: #ecfdf5; color: #059669; }
+    .ab-call:hover { background: #d1fae5; }
+    .ab-wa   { background: #f0fdf4; color: #16a34a; }
+    .ab-wa:hover { background: #dcfce7; }
+    .ab-edit { background: #f0f2ff; color: var(--blue); }
+    .ab-edit:hover { background: #e0e4ff; }
+
+    /* ── PAGINATION ── */
+    .pagination {
+      padding: 12px 20px;
+      border-top: 1px solid #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78em;
+      color: #8d99ae;
+    }
+    .pagination button {
+      padding: 5px 12px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85em;
+    }
+    .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination button:not(:disabled):hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── MODAL ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(3px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: #fff;
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h2 { font-size: 1.05em; font-weight: 700; margin-bottom: 20px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .form-row.full { grid-template-columns: 1fr; }
+
+    .field label { font-size: 0.77em; font-weight: 600; color: #4b5563; display: block; margin-bottom: 5px; }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.84em;
+      color: var(--navy);
+      outline: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); }
+    .field textarea { resize: vertical; min-height: 60px; }
+
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* ── IMPORTADOR ── */
+    .import-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      max-width: 500px;
+    }
+    .progress-bar {
+      height: 8px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue), #764ba2);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+    .log-box {
+      background: #f8f9ff;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.75em;
+      color: #6b7280;
+      max-height: 160px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    /* ── MENSAJES ── */
+    .mensajes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .mensaje-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .mensaje-card h4 { font-size: 0.82em; font-weight: 700; color: var(--blue); margin-bottom: 10px; }
+    .mensaje-card textarea {
+      width: 100%;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 0.8em;
+      resize: vertical;
+      min-height: 100px;
+      outline: none;
+    }
+    .mensaje-card textarea:focus { border-color: var(--blue); }
+
+    /* ── EMPTY ── */
+    .empty { text-align: center; padding: 48px; color: #8d99ae; }
+    .empty .e-icon { font-size: 2.5em; margin-bottom: 10px; }
+
+    /* ── PIPELINE SEGUIMIENTO ── */
+    .pipeline-cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .pipeline-col { background: #f8f9ff; border-radius: 14px; padding: 14px; min-height: 200px; }
+    .pipeline-col h3 { font-size: 0.75em; font-weight: 700; color: #8d99ae; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .pipeline-card { background: #fff; border-radius: 10px; padding: 12px; margin-bottom: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); font-size: 0.8em; }
+    .pipeline-card .pc-empresa { font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+    .pipeline-card .pc-accion  { color: #6b7280; font-size: 0.88em; }
+    .pipeline-card .pc-fecha   { color: #9ca3af; font-size: 0.8em; }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .sidebar-logo .brand, .nav-label, .nav-item span, .sidebar-footer { display: none; }
+      .main { margin-left: 60px; }
+      .pipeline-cols { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">Supratech</div>
+    <div class="sub">Panel de Prospectos</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Principal</div>
+    <div class="nav-item active" onclick="go('dashboard')">
+      <span class="icon">📊</span><span>Dashboard</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Prospectos</div>
+    <div class="nav-item" onclick="go('por-llamar')">
+      <span class="icon">🔔</span><span>Por Llamar</span>
+      <span class="nav-badge" id="badge-llamar">—</span>
+    </div>
+    <div class="nav-item" onclick="go('prospectos')">
+      <span class="icon">👥</span><span>Todos los Prospectos</span>
+    </div>
+    <div class="nav-item" onclick="go('llamadas')">
+      <span class="icon">📞</span><span>Llamadas</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Conversión</div>
+    <div class="nav-item" onclick="go('pipeline')">
+      <span class="icon">📈</span><span>Pipeline</span>
+    </div>
+    <div class="nav-item" onclick="go('clientes')">
+      <span class="icon">✅</span><span>Clientes</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Herramientas</div>
+    <div class="nav-item" onclick="go('mensajes')">
+      <span class="icon">💬</span><span>Mensajes</span>
+    </div>
+    <div class="nav-item" onclick="go('importador')">
+      <span class="icon">🗺</span><span>Importador</span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <a href="/formulario" target="_blank" class="btn-llamar">📞 Iniciar Llamadas</a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <h2 id="topbar-title">Dashboard</h2>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="refreshData()">↺ Actualizar</button>
+      <button class="btn btn-primary" onclick="openModal('modal-agregar')">+ Agregar Prospecto</button>
+    </div>
+  </div>
+
+  <!-- ─── DASHBOARD ─── -->
+  <div class="section active" id="sec-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="num" style="color:var(--blue)"  id="s-total">—</div><div class="lbl">Total prospectos</div></div>
+      <div class="stat-card"><div class="num" style="color:#f4a422"      id="s-llamar">—</div><div class="lbl">Por llamar</div></div>
+      <div class="stat-card"><div class="num" style="color:#7c3aed"      id="s-interes">—</div><div class="lbl">Interesados + Demo</div></div>
+      <div class="stat-card"><div class="num" style="color:#28a745"      id="s-clientes">—</div><div class="lbl">Clientes convertidos</div></div>
+      <div class="stat-card"><div class="num" style="color:var(--navy)"  id="s-llamadas">—</div><div class="lbl">Llamadas realizadas</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card"><h3>Conclusiones de llamadas</h3><canvas id="chartConclusiones"></canvas></div>
+      <div class="chart-card"><h3>¿Cómo manejan pedidos?</h3><canvas id="chartSistemas"></canvas></div>
+      <div class="chart-card"><h3>Llamadas por semana</h3><canvas id="chartSemanas"></canvas></div>
+      <div class="chart-card"><h3>Top ciudades</h3><canvas id="chartCiudades"></canvas></div>
+      <div class="chart-card"><h3>Distribución por giro</h3><canvas id="chartGiros"></canvas></div>
+      <div class="chart-card"><h3>¿Respondieron?</h3><canvas id="chartRespondio"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ─── POR LLAMAR ─── -->
+  <div class="section" id="sec-por-llamar">
+    <div class="table-card">
+      <div class="table-toolbar">
+        <input type="text" id="buscar-llamar" placeholder="🔍 Buscar..." oninput="filtrarTabla('llamar')">
+        <select id="filtro-llamar-giro" onchange="filtrarTabla('llamar')">
+          <option value="">Todos los giros</option>
+          <option>Ferretería</option><option>Materiales de construcción</option>
+          <option>Consumibles industriales</option><option>Abarrotes</option><option>Otro</option>
+        </select>
+        <span style="font-size:0.8em;color:#8d99ae" id="count-llamar"></span>
+      </div>
+      <div class="table-wrap"><table><thead id="thead-llamar"></thead><tbody id="tbody-llamar"></tbody></table></div>
+      <div class="pagination" id="pag-llamar">
+        <span id="pag-llamar-info"></span>
+        <div style="display:flex;gap:8px">
+          <button onclick="prevPage('llamar')">← Ant</button>
+          <button onclick="nextPage('llamar')">Sig →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TODOS PROSPECTOS ─── -->
+  <div class="section" id="sec-prospectos">
+    <div class="table-card">
+      <div class="table-toolbar">
+        <input type="text" id="buscar-prosp" placeholder="🔍 Nombre, empresa o ciudad..." oninput="filtrarTabla('prosp')">
+        <select id="filtro-prosp-estado" onchange="filtrarTabla('prosp')">
+          <option value="">Todos los estados</option>
+          <option>Por llamar</option><option>Contactado</option><option>Interesado</option>
+          <option>Demo agendada</option><option>No interesa</option><option>Buzón</option>
+        </select>
+        <select id="filtro-prosp-giro" onchange="filtrarTabla('prosp')">
+          <option value="">Todos los giros</option>
+          <option>Ferretería</option><option>Materiales de construcción</option>
+          <option>Consumibles industriales</option><option>Abarrotes</option><option>Otro</option>
+        </select>
+        <button class="btn btn-ghost" onclick="exportCSV('prosp')">⬇ CSV</button>
+      </div>
+      <div class="table-wrap"><table><thead id="thead-prosp"></thead><tbody id="tbody-prosp"></tbody></table></div>
+      <div class="pagination" id="pag-prosp">
+        <span id="pag-prosp-info"></span>
+        <div style="display:flex;gap:8px">
+          <button onclick="prevPage('prosp')">← Ant</button>
+          <button onclick="nextPage('prosp')">Sig →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── LLAMADAS ─── -->
+  <div class="section" id="sec-llamadas">
+    <div class="table-card">
+      <div class="table-toolbar">
+        <input type="text" id="buscar-ll" placeholder="🔍 Buscar empresa..." oninput="filtrarTabla('ll')">
+        <select id="filtro-ll-conclusion" onchange="filtrarTabla('ll')">
+          <option value="">Todas las conclusiones</option>
+          <option>Demo agendada</option><option>Interesado - dar seguimiento</option>
+          <option>Enviar info por WhatsApp</option><option>No interesa</option>
+          <option>Buzón de voz</option><option>Teléfono incorrecto</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table><thead id="thead-ll"></thead><tbody id="tbody-ll"></tbody></table></div>
+      <div class="pagination" id="pag-ll">
+        <span id="pag-ll-info"></span>
+        <div style="display:flex;gap:8px">
+          <button onclick="prevPage('ll')">← Ant</button>
+          <button onclick="nextPage('ll')">Sig →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── PIPELINE ─── -->
+  <div class="section" id="sec-pipeline">
+    <div class="pipeline-cols" id="pipeline-board"></div>
+  </div>
+
+  <!-- ─── CLIENTES ─── -->
+  <div class="section" id="sec-clientes">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <button class="btn btn-success" onclick="openModal('modal-cliente')">+ Registrar cliente</button>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap"><table><thead id="thead-cl"></thead><tbody id="tbody-cl"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- ─── MENSAJES ─── -->
+  <div class="section" id="sec-mensajes">
+    <div class="mensajes-grid" id="mensajes-grid"></div>
+  </div>
+
+  <!-- ─── IMPORTADOR ─── -->
+  <div class="section" id="sec-importador">
+    <div class="import-card">
+      <h2 style="font-size:1.1em;font-weight:700;margin-bottom:18px">🗺 Importar prospectos de Google Maps</h2>
+      <p style="font-size:0.84em;color:#6b7280;margin-bottom:18px">
+        Busca distribuidoras por ciudad. Filtra por calificación y teléfono disponible.
+        Categorías: Ferreterías, Materiales de construcción, Abarrotes, Consumibles industriales.
+      </p>
+      <div class="field" style="margin-bottom:14px">
+        <label>Ciudad objetivo</label>
+        <input type="text" id="imp-ciudad" placeholder="Guadalajara, Jalisco">
+      </div>
+      <button class="btn btn-primary" onclick="iniciarImportacion()" id="btn-importar" style="width:100%">Buscar distribuidoras</button>
+      <div id="imp-status" style="margin-top:16px;display:none">
+        <div style="font-size:0.8em;color:#6b7280" id="imp-label">Buscando...</div>
+        <div class="progress-bar"><div class="progress-fill" id="imp-bar" style="width:0%"></div></div>
+        <div class="log-box" id="imp-log"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ─── MODAL AGREGAR PROSPECTO ─── -->
+<div class="overlay" id="modal-agregar">
+  <div class="modal">
+    <h2 id="modal-agregar-title">Agregar Prospecto</h2>
+    <input type="hidden" id="ag-row">
+    <div class="form-row">
+      <div class="field"><label>Nombre del dueño *</label><input id="ag-nombre" placeholder="Juan García"></div>
+      <div class="field"><label>Empresa / Distribuidora *</label><input id="ag-empresa" placeholder="Ferretería García"></div>
+      <div class="field"><label>Giro</label>
+        <select id="ag-giro">
+          <option>Ferretería</option><option>Materiales de construcción</option>
+          <option>Consumibles industriales</option><option>Abarrotes</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="field"><label>Ciudad</label><input id="ag-ciudad" placeholder="Guadalajara"></div>
+      <div class="field"><label>Teléfono *</label><input id="ag-tel" placeholder="33 1234 5678"></div>
+      <div class="field"><label>WhatsApp</label><input id="ag-wa" placeholder="33 1234 5678"></div>
+      <div class="field"><label>Empleados</label>
+        <select id="ag-emp">
+          <option>5-10</option><option>10-25</option><option>25-50</option>
+        </select>
+      </div>
+      <div class="field"><label>Estado</label>
+        <select id="ag-estado">
+          <option>Por llamar</option><option>Contactado</option><option>Interesado</option>
+          <option>Demo agendada</option><option>No interesa</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="field"><label>Origen</label>
+        <select id="ag-origen">
+          <option>Manual</option><option>Importador Maps</option><option>Referido</option>
+          <option>Landing Supratech</option><option>LinkedIn</option><option>Directorios</option>
+        </select>
+      </div>
+      <div class="field"><label>Notas</label><textarea id="ag-notas" placeholder="Contexto, intereses, objeciones..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-agregar')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarProspecto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODAL EDITAR ESTADO ─── -->
+<div class="overlay" id="modal-estado">
+  <div class="modal" style="max-width:380px">
+    <h2>Actualizar prospecto</h2>
+    <input type="hidden" id="est-row">
+    <div class="form-row full">
+      <div class="field"><label>Nuevo estado</label>
+        <select id="est-estado">
+          <option>Por llamar</option><option>Contactado</option><option>Interesado</option>
+          <option>Demo agendada</option><option>No interesa</option><option>Buzón</option>
+        </select>
+      </div>
+      <div class="field"><label>Nota (opcional)</label><textarea id="est-nota" placeholder="¿Qué pasó?"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-estado')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEstado()">Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODAL CLIENTE ─── -->
+<div class="overlay" id="modal-cliente">
+  <div class="modal" style="max-width:420px">
+    <h2>Registrar nuevo cliente</h2>
+    <div class="form-row">
+      <div class="field"><label>Empresa *</label><input id="cl-empresa" placeholder="Ferretería García"></div>
+      <div class="field"><label>Ciudad</label><input id="cl-ciudad" placeholder="Guadalajara"></div>
+      <div class="field"><label>Giro</label>
+        <select id="cl-giro"><option>Ferretería</option><option>Materiales de construcción</option><option>Consumibles industriales</option><option>Abarrotes</option><option>Otro</option></select>
+      </div>
+      <div class="field"><label>Plan</label>
+        <select id="cl-plan"><option>Mensual</option><option>Anual</option></select>
+      </div>
+      <div class="field"><label>Monto MXN/mes</label><input id="cl-monto" value="399"></div>
+      <div class="field"><label>Estado</label>
+        <select id="cl-estado"><option>Activo</option><option>En onboarding</option><option>Pausado</option></select>
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="field"><label>Notas</label><textarea id="cl-notas"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-cliente')">Cancelar</button>
+      <button class="btn btn-success" onclick="guardarCliente()">Registrar Cliente ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────
+const state = {
+  section: 'dashboard',
+  data:    {},
+  filtered:{},
+  page:    { prosp: 1, llamar: 1, ll: 1, cl: 1 },
+  pageSize: 50,
+  charts:  {},
+};
+
+const ESTADO_CLASS = {
+  'Por llamar': 'badge-por_llamar', 'Contactado': 'badge-contactado',
+  'Interesado': 'badge-interesado', 'Demo agendada': 'badge-demo',
+  'No interesa': 'badge-no_interesa', 'Buzón': 'badge-buzon',
+  'Cliente': 'badge-cliente', 'T. Incorrecto': 'badge-buzon',
+};
+
+// ─── NAVIGATION ──────────────────────────────────
+function go(section) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + section).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  const titles = {
+    dashboard: 'Dashboard', 'por-llamar': 'Por Llamar',
+    prospectos: 'Todos los Prospectos', llamadas: 'Llamadas Realizadas',
+    pipeline: 'Pipeline de Ventas', clientes: 'Clientes Convertidos',
+    mensajes: 'Plantillas de Mensajes', importador: 'Importador Google Maps'
+  };
+  document.getElementById('topbar-title').textContent = titles[section] || section;
+  state.section = section;
+  loadSection(section);
+}
+
+// ─── LOAD DATA ───────────────────────────────────
+async function loadSection(sec) {
+  if (state.data[sec]) {
+    renderSection(sec);
+    return;
+  }
+  const map = {
+    dashboard:   loadDashboard,
+    'por-llamar': loadPorLlamar,
+    prospectos:  loadProspectos,
+    llamadas:    loadLlamadas,
+    pipeline:    loadPipeline,
+    clientes:    loadClientes,
+    mensajes:    loadMensajes,
+  };
+  if (map[sec]) await map[sec]();
+}
+
+async function refreshData() {
+  await fetch('/api/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'all' }) });
+  state.data = {};
+  loadSection(state.section);
+}
+
+// ─── DASHBOARD ───────────────────────────────────
+async function loadDashboard() {
+  const d = await apiFetch('/api/prospectos/stats');
+  state.data.dashboard = d;
+  document.getElementById('s-total').textContent    = d.total;
+  document.getElementById('s-llamar').textContent   = d.por_llamar;
+  document.getElementById('s-interes').textContent  = d.interesados;
+  document.getElementById('s-clientes').textContent = d.convertidos;
+  document.getElementById('s-llamadas').textContent = Object.values(d.conclusiones || {}).reduce((a,b)=>a+b,0);
+  document.getElementById('badge-llamar').textContent = d.por_llamar;
+
+  buildChart('chartConclusiones', 'doughnut', d.conclusiones);
+  buildChart('chartSistemas',     'doughnut', d.sistemas);
+  buildChartSemanas('chartSemanas', d.por_semana);
+  buildChartBar('chartCiudades',  d.top_ciudades);
+  buildChart('chartGiros',       'pie',      d.giros);
+  buildChart('chartRespondio',   'doughnut', d.respondio);
+}
+
+function buildChart(id, type, dataObj) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  if (state.charts[id]) state.charts[id].destroy();
+  const labels = Object.keys(dataObj || {});
+  const values = Object.values(dataObj || {});
+  const colors = ['#4361ee','#28a745','#dc3545','#f4a422','#6c63ff','#17a2b8','#fd7e14','#6c757d'];
+  state.charts[id] = new Chart(ctx, {
+    type,
+    data: { labels, datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderWidth: 0 }] },
+    options: { plugins: { legend: { position: 'right', labels: { font: { size: 10, family: 'Poppins' }, boxWidth: 10 } } }, maintainAspectRatio: true }
+  });
+}
+
+function buildChartSemanas(id, semanas) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  if (state.charts[id]) state.charts[id].destroy();
+  state.charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: semanas.map(s => s.semana),
+      datasets: [{ data: semanas.map(s => s.total), backgroundColor: '#4361ee', borderRadius: 4 }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } }, maintainAspectRatio: true }
+  });
+}
+
+function buildChartBar(id, ciudades) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  if (state.charts[id]) state.charts[id].destroy();
+  state.charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ciudades.map(c => c[0]),
+      datasets: [{ data: ciudades.map(c => c[1]), backgroundColor: '#4361ee', borderRadius: 4 }]
+    },
+    options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { font: { size: 9 } } }, y: { ticks: { font: { size: 9 } } } }, maintainAspectRatio: true }
+  });
+}
+
+// ─── POR LLAMAR ──────────────────────────────────
+async function loadPorLlamar() {
+  const d = await apiFetch('/api/prospectos/pendientes');
+  state.data['por-llamar'] = d.prospectos || [];
+  state.filtered['llamar'] = state.data['por-llamar'];
+  document.getElementById('count-llamar').textContent = `${state.data['por-llamar'].length} prospectos`;
+  renderTabla('llamar', ['Nombre','Empresa','Giro','Ciudad','Teléfono','WhatsApp','Empleados','Acciones'], state.filtered['llamar']);
+}
+
+// ─── PROSPECTOS ──────────────────────────────────
+async function loadProspectos() {
+  const d = await apiFetch('/api/prospectos/lista');
+  state.data.prospectos = d.prospectos || [];
+  state.filtered.prosp  = state.data.prospectos;
+  renderTabla('prosp', ['Nombre','Empresa','Giro','Ciudad','Teléfono','Estado','Empleados','Origen','Acciones'], state.filtered.prosp);
+}
+
+// ─── LLAMADAS ────────────────────────────────────
+async function loadLlamadas() {
+  const d = await apiFetch('/api/prospectos/llamadas');
+  state.data.llamadas  = d.llamadas || [];
+  state.filtered.ll    = state.data.llamadas;
+  const cols = ['Timestamp','Empresa','Respondió','Sistema Actual','Pedidos/Mes','Empleados','Interés Demo','Agendó Demo','Conclusión'];
+  renderTabla('ll', cols, state.filtered.ll);
+}
+
+// ─── CLIENTES ────────────────────────────────────
+async function loadClientes() {
+  const d = await apiFetch('/api/prospectos/clientes');
+  state.data.clientes = d.clientes || [];
+  renderTabla('cl', ['Fecha','Empresa','Giro','Ciudad','Plan','Monto MXN','Estado'], state.data.clientes);
+}
+
+// ─── PIPELINE ────────────────────────────────────
+async function loadPipeline() {
+  const d = await apiFetch('/api/seguimiento');
+  state.data.pipeline = d.seguimiento || [];
+  renderPipeline(state.data.pipeline);
+}
+
+const PIPELINE_STAGES = ['Contactado','Interesado','Demo agendada','Propuesta enviada','Cliente'];
+
+function renderPipeline(data) {
+  const board = document.getElementById('pipeline-board');
+  board.innerHTML = PIPELINE_STAGES.map(stage => {
+    const items = data.filter(r => r['Estado Pipeline'] === stage);
+    return `<div class="pipeline-col">
+      <h3>${stage} <span style="background:#e0e4ff;color:var(--blue);padding:1px 7px;border-radius:8px;font-size:0.85em">${items.length}</span></h3>
+      ${items.map(r => `<div class="pipeline-card">
+        <div class="pc-empresa">${esc(r['Empresa']||'')}</div>
+        <div class="pc-accion">${esc(r['Próxima Acción']||'')}</div>
+        <div class="pc-fecha">${esc(r['Fecha Próximo Contacto']||'')}</div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ─── MENSAJES ────────────────────────────────────
+async function loadMensajes() {
+  const d = await apiFetch('/api/mensajes');
+  state.data.mensajes = d.mensajes || [];
+  const grid = document.getElementById('mensajes-grid');
+  if (!state.data.mensajes.length) {
+    grid.innerHTML = '<div class="empty"><div class="e-icon">💬</div><p>Sin plantillas configuradas</p></div>';
+    return;
+  }
+  grid.innerHTML = state.data.mensajes.map(m => `
+    <div class="mensaje-card">
+      <h4>${esc(m.tipo)}</h4>
+      <textarea id="msg-${m._col}" onblur="guardarMensaje(${m._col}, this.value)">${esc(m.contenido)}</textarea>
+    </div>
+  `).join('');
+}
+
+async function guardarMensaje(col, contenido) {
+  await apiFetch('/api/mensajes/update', 'POST', { _col: col, contenido });
+}
+
+// ─── RENDER TABLA GENÉRICA ────────────────────────
+function renderTabla(key, cols, data) {
+  const pageSize = state.pageSize;
+  const page     = state.page[key] || 1;
+  const start    = (page - 1) * pageSize;
+  const slice    = data.slice(start, start + pageSize);
+  const total    = data.length;
+
+  const thead = document.getElementById(`thead-${key}`);
+  const tbody = document.getElementById(`tbody-${key}`);
+  const info  = document.getElementById(`pag-${key}-info`);
+  if (!thead || !tbody) return;
+
+  thead.innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
+
+  if (!slice.length) {
+    tbody.innerHTML = `<tr><td colspan="${cols.length}" style="text-align:center;padding:40px;color:#8d99ae">Sin resultados</td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map(row => `<tr>${cols.map(col => renderCell(key, col, row)).join('')}</tr>`).join('');
+  }
+
+  if (info) info.textContent = `${start+1}–${Math.min(start+pageSize, total)} de ${total}`;
+}
+
+function renderCell(key, col, row) {
+  if (col === 'Acciones') {
+    const tel = (row['Teléfono']||'').replace(/\D/g,'');
+    const wa  = (row['WhatsApp']||row['Teléfono']||'').replace(/\D/g,'');
+    const waMsg = encodeURIComponent(`Hola ${row['Nombre']||''}, te contacto de Supratech — el software de operaciones para distribuidoras mexicanas. ¿Tienes unos minutos?`);
+    return `<td>
+      ${tel ? `<a href="tel:${tel}" class="action-btn ab-call">📞 Llamar</a>` : ''}
+      ${wa  ? `<a href="https://wa.me/52${wa}?text=${waMsg}" target="_blank" class="action-btn ab-wa">💬 WA</a>` : ''}
+      <button class="action-btn ab-edit" onclick="editarEstado(${row._row},'${esc(row.Estado||'Por llamar')}')">✏️ Estado</button>
+    </td>`;
+  }
+  if (col === 'Estado') {
+    const cls = ESTADO_CLASS[row[col]] || 'badge-contactado';
+    return `<td><span class="badge ${cls}">${esc(row[col]||'—')}</span></td>`;
+  }
+  if (col === 'Conclusión') {
+    const cls = row[col]?.includes('Demo') ? 'badge-demo' : row[col]?.includes('Interesado') ? 'badge-interesado' : row[col]?.includes('No') ? 'badge-no_interesa' : 'badge-contactado';
+    return `<td><span class="badge ${cls}">${esc(row[col]||'—')}</span></td>`;
+  }
+  return `<td>${esc(row[col]||'')}</td>`;
+}
+
+function prevPage(key) { if (state.page[key] > 1) { state.page[key]--; renderSection(key); } }
+function nextPage(key) {
+  const total = (state.filtered[key] || state.data[key] || []).length;
+  if (state.page[key] * state.pageSize < total) { state.page[key]++; renderSection(key); }
+}
+
+function renderSection(sec) {
+  const map = { prosp: ['prospectos',['Nombre','Empresa','Giro','Ciudad','Teléfono','Estado','Empleados','Origen','Acciones']], llamar: ['por-llamar',['Nombre','Empresa','Giro','Ciudad','Teléfono','WhatsApp','Empleados','Acciones']], ll: ['llamadas',['Timestamp','Empresa','Respondió','Sistema Actual','Pedidos/Mes','Empleados','Interés Demo','Agendó Demo','Conclusión']], cl: ['clientes',['Fecha','Empresa','Giro','Ciudad','Plan','Monto MXN','Estado']] };
+  if (map[sec]) {
+    const [dataKey, cols] = map[sec];
+    renderTabla(sec, cols, state.filtered[sec] || state.data[dataKey] || []);
+  }
+}
+
+// ─── FILTROS ──────────────────────────────────────
+function filtrarTabla(key) {
+  const dataKey = { prosp: 'prospectos', llamar: 'por-llamar', ll: 'llamadas', cl: 'clientes' }[key];
+  let data = state.data[dataKey] || [];
+  const q = (document.getElementById(`buscar-${key}`)?.value || '').toLowerCase().trim();
+  if (q) data = data.filter(r => Object.values(r).some(v => v.toString().toLowerCase().includes(q)));
+  const est = document.getElementById(`filtro-${key}-estado`)?.value;
+  if (est) data = data.filter(r => r['Estado'] === est || r['Conclusión'] === est);
+  const giro = document.getElementById(`filtro-${key}-giro`)?.value;
+  if (giro) data = data.filter(r => r['Giro'] === giro);
+  const conc = document.getElementById(`filtro-${key}-conclusion`)?.value;
+  if (conc) data = data.filter(r => r['Conclusión'] === conc);
+  state.filtered[key] = data;
+  state.page[key] = 1;
+  renderSection(key);
+}
+
+// ─── CSV EXPORT ──────────────────────────────────
+function exportCSV(key) {
+  const dataKey = { prosp: 'prospectos', ll: 'llamadas', cl: 'clientes' }[key];
+  const data    = state.filtered[key] || state.data[dataKey] || [];
+  if (!data.length) return;
+  const cols = Object.keys(data[0]).filter(k => !k.startsWith('_'));
+  const csv  = [cols.join(','), ...data.map(r => cols.map(c => `"${(r[c]||'').replace(/"/g,'""')}"`).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `supratech_${dataKey}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ─── MODALES ──────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+
+// ─── GUARDAR PROSPECTO ───────────────────────────
+async function guardarProspecto() {
+  const nombre  = document.getElementById('ag-nombre').value.trim();
+  const empresa = document.getElementById('ag-empresa').value.trim();
+  if (!nombre || !empresa) { alert('Nombre y empresa son obligatorios'); return; }
+  const body = {
+    nombre, empresa,
+    giro:     document.getElementById('ag-giro').value,
+    ciudad:   document.getElementById('ag-ciudad').value.trim(),
+    telefono: document.getElementById('ag-tel').value.trim(),
+    whatsapp: document.getElementById('ag-wa').value.trim(),
+    empleados:document.getElementById('ag-emp').value,
+    estado:   document.getElementById('ag-estado').value,
+    origen:   document.getElementById('ag-origen').value,
+    notas:    document.getElementById('ag-notas').value.trim(),
+  };
+  const row = document.getElementById('ag-row').value;
+  if (row) {
+    await apiFetch('/api/prospectos/actualizar', 'POST', { ...body, _row: parseInt(row) });
+  } else {
+    await apiFetch('/api/prospectos/agregar', 'POST', body);
+  }
+  closeModal('modal-agregar');
+  state.data = {};
+  loadSection(state.section);
+}
+
+// ─── EDITAR ESTADO ───────────────────────────────
+function editarEstado(row, estadoActual) {
+  document.getElementById('est-row').value    = row;
+  document.getElementById('est-estado').value = estadoActual;
+  document.getElementById('est-nota').value   = '';
+  openModal('modal-estado');
+}
+
+async function guardarEstado() {
+  const row    = parseInt(document.getElementById('est-row').value);
+  const estado = document.getElementById('est-estado').value;
+  const nota   = document.getElementById('est-nota').value.trim();
+  await apiFetch('/api/prospectos/actualizar', 'POST', { _row: row, Estado: estado, Notas: nota || undefined });
+  closeModal('modal-estado');
+  state.data = {};
+  loadSection(state.section);
+}
+
+// ─── GUARDAR CLIENTE ─────────────────────────────
+async function guardarCliente() {
+  const empresa = document.getElementById('cl-empresa').value.trim();
+  if (!empresa) { alert('Empresa obligatoria'); return; }
+  await apiFetch('/api/clientes/agregar', 'POST', {
+    empresa,
+    ciudad: document.getElementById('cl-ciudad').value.trim(),
+    giro:   document.getElementById('cl-giro').value,
+    plan:   document.getElementById('cl-plan').value,
+    monto:  document.getElementById('cl-monto').value,
+    estado: document.getElementById('cl-estado').value,
+    notas:  document.getElementById('cl-notas').value.trim(),
+  });
+  closeModal('modal-cliente');
+  state.data.clientes = null;
+  loadClientes();
+}
+
+// ─── IMPORTADOR ──────────────────────────────────
+let _importPoll = null;
+
+async function iniciarImportacion() {
+  const ciudad = document.getElementById('imp-ciudad').value.trim();
+  if (!ciudad) { alert('Ingresa una ciudad'); return; }
+  document.getElementById('btn-importar').disabled = true;
+  document.getElementById('imp-status').style.display = 'block';
+  document.getElementById('imp-log').innerHTML = '';
+  const r = await apiFetch('/api/importador/iniciar', 'POST', { ciudad });
+  if (r.error) { alert(r.error); document.getElementById('btn-importar').disabled = false; return; }
+  _importPoll = setInterval(pollImportacion, 3000);
+}
+
+async function pollImportacion() {
+  const d = await apiFetch('/api/importador/estado');
+  document.getElementById('imp-label').textContent = `${d.categoria || '...'} · ${d.encontrados} encontrados`;
+  document.getElementById('imp-bar').style.width   = d.progreso + '%';
+  document.getElementById('imp-log').innerHTML = (d.log || []).map(l => `<div>${esc(l)}</div>`).join('');
+  if (d.status === 'done' || d.status === 'error') {
+    clearInterval(_importPoll);
+    document.getElementById('btn-importar').disabled = false;
+    document.getElementById('imp-label').textContent = d.error ? `Error: ${d.error}` : `✓ Importación completa — ${d.encontrados} nuevos prospectos`;
+    if (d.status === 'done') { state.data = {}; }
+  }
+}
+
+// ─── API HELPER ──────────────────────────────────
+async function apiFetch(url, method = 'GET', body = null) {
+  const opts = { method, headers: {} };
+  if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  const res  = await fetch(url, opts);
+  return res.json();
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── INIT ────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>
