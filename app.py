@@ -22,12 +22,14 @@ app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 # Crear un Google Spreadsheet, compartirlo con maps-905@bubbly-subject-412101.iam.gserviceaccount.com
 # y pegar el ID de cada hoja aquí (o via env vars).
 # ─────────────────────────────────────────────
+_MASTER_SHEET = '1TV4nrtrHlkLPFVhzsMTjrIMvP9mgHkh9MSjiN1a-HR4'
+
 SHEET_IDS = {
-    'prospectos':  os.environ.get('PROSPECTOS_SHEET_ID', ''),
-    'llamadas':    os.environ.get('LLAMADAS_SHEET_ID',   ''),
-    'clientes':    os.environ.get('CLIENTES_SHEET_ID',   ''),
-    'seguimiento': os.environ.get('SEGUIMIENTO_SHEET_ID',''),
-    'mensajes':    os.environ.get('MENSAJES_SHEET_ID',   ''),
+    'prospectos':  os.environ.get('PROSPECTOS_SHEET_ID',  _MASTER_SHEET),
+    'llamadas':    os.environ.get('LLAMADAS_SHEET_ID',    _MASTER_SHEET),
+    'clientes':    os.environ.get('CLIENTES_SHEET_ID',    _MASTER_SHEET),
+    'seguimiento': os.environ.get('SEGUIMIENTO_SHEET_ID', _MASTER_SHEET),
+    'mensajes':    os.environ.get('MENSAJES_SHEET_ID',    _MASTER_SHEET),
 }
 
 # Si prefieres un solo spreadsheet con múltiples hojas, pon el mismo ID en todos
