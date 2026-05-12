@@ -287,6 +287,17 @@ const PASOS = [
     ]
   },
   {
+    id: 'tipo_negocio',
+    pregunta: '¿Es un negocio independiente o parte de una cadena?',
+    hint: 'Trabajamos con negocios independientes. Cadenas (Oxxo, Farmacias GDL, Coppel, etc.) tienen sistemas corporativos propios — no son nuestro cliente.',
+    opciones: [
+      { emoji: '✅', label: 'Negocio independiente' },
+      { emoji: '🏢', label: 'Franquicia o cadena regional' },
+      { emoji: '❌', label: 'Cadena nacional (Oxxo, Chedraui, etc.)' },
+    ],
+    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora']
+  },
+  {
     id: 'skus',
     pregunta: '¿Cuántos productos / SKUs manejan aproximadamente?',
     hint: 'Este es el calificador clave. Con +300 SKUs el sistema les genera valor inmediato.',
@@ -296,7 +307,8 @@ const PASOS = [
       { emoji: '🏆', label: 'Más de 300 productos' },
       { emoji: '❓', label: 'No sabe / no quiso decir' },
     ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora']
+    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
+             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
   },
   {
     id: 'sistema_actual',
@@ -308,7 +320,8 @@ const PASOS = [
       { emoji: '💻', label: 'Con un sistema (ERP/otro)' },
       { emoji: '📝', label: 'Sin sistema, todo manual' },
     ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora']
+    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
+             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
   },
   {
     id: 'pedidos_mes',
@@ -320,7 +333,8 @@ const PASOS = [
       { emoji: '📦', label: 'Más de 200 pedidos' },
       { emoji: '❓', label: 'No sabe / no quiso decir' },
     ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora']
+    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
+             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
   },
   {
     id: 'empleados',
@@ -332,7 +346,8 @@ const PASOS = [
       { emoji: '👥', label: '20 a 50 personas' },
       { emoji: '🏢', label: 'Más de 50 personas' },
     ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora']
+    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
+             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
   },
   {
     id: 'decisor',
@@ -343,18 +358,20 @@ const PASOS = [
       { emoji: '🤔', label: 'Necesito consultarlo con alguien' },
       { emoji: '↗️', label: 'No, la persona es otra' },
     ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora']
+    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
+             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
   },
   {
     id: 'interes_demo',
     pregunta: '¿Le interesaría una demo gratuita de 15 minutos?',
-    hint: '"Le muestro exactamente cómo Supratech funciona con distribuidoras como la suya — sin compromiso."',
+    hint: '"Le muestro exactamente cómo Supratech funciona con negocios como el suyo — sin compromiso."',
     opciones: [
       { emoji: '🙌', label: 'Sí, me interesa mucho' },
       { emoji: '🤷', label: 'Quizás, mándame más información' },
       { emoji: '🙅', label: 'No por el momento' },
     ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora']
+    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
+             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
   },
   {
     id: 'agendo_demo',
@@ -366,7 +383,8 @@ const PASOS = [
       { emoji: '📞', label: 'Prefiero que me llamen después' },
       { emoji: '❌', label: 'No le interesa' },
     ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora','No por el momento']
+    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora','No por el momento',
+             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
   },
   {
     id: 'conclusion',
@@ -377,6 +395,7 @@ const PASOS = [
       { emoji: '⭐', label: 'Interesado - dar seguimiento' },
       { emoji: '💬', label: 'Enviar info por WhatsApp' },
       { emoji: '❌', label: 'No interesa' },
+      { emoji: '🏢', label: 'No califica - Cadena/Franquicia' },
       { emoji: '📵', label: 'Buzón de voz' },
       { emoji: '🚫', label: 'Teléfono incorrecto' },
     ]
