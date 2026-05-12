@@ -192,6 +192,10 @@ CATEGORIAS_IMPORTADOR = [
     'Distribuidoras de productos veterinarios',
     'Distribuidoras de plásticos',
     'Negocios de plásticos desechables mayoristas',
+    'Farmacias independientes',
+    'Distribuidoras farmacéuticas',
+    'Distribuidoras de herramientas',
+    'Distribuidoras de equipo de seguridad industrial',
 ]
 
 def _buscar_negocios(gmaps, categoria, ciudad):
