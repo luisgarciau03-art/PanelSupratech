@@ -89,21 +89,24 @@ def get_worksheet(key):
         _init_headers(ws, key)
         return ws
 
+SHEET_HEADERS = {
+    'prospectos':  ['Nombre', 'Empresa', 'Giro', 'Ciudad', 'Teléfono', 'WhatsApp',
+                    'Empleados', 'Estado', 'Origen', 'Fecha', 'Notas',
+                    'Calificación', 'Reseñas', 'Dirección', 'Sitio Web', 'Maps Link'],
+    'llamadas':    ['Timestamp', 'Empresa', 'Respondió', 'SKUs', 'Sistema Actual',
+                    'Pedidos/Mes', 'Empleados', 'Decisor', 'Interés Demo',
+                    'Agendó Demo', 'Conclusión', 'Notas'],
+    'clientes':    ['Fecha', 'Empresa', 'Giro', 'Ciudad', 'Plan', 'Monto MXN', 'Estado', 'Notas'],
+    'seguimiento': ['Empresa', 'Estado Pipeline', 'Próxima Acción', 'Fecha Próximo Contacto',
+                    'Notas', 'Responsable'],
+    'mensajes':    ['Intro Llamada', 'Presentación Supratech', 'Manejo de Objeciones',
+                    'Cierre Demo', 'Follow-up WhatsApp', 'No Interesa - Cierre Amable'],
+}
+
 def _init_headers(ws, key):
     """Inicializa encabezados en hojas nuevas."""
-    headers = {
-        'prospectos':  ['Nombre', 'Empresa', 'Giro', 'Ciudad', 'Teléfono', 'WhatsApp',
-                        'Empleados', 'Estado', 'Origen', 'Fecha', 'Notas'],
-        'llamadas':    ['Timestamp', 'Empresa', 'Respondió', 'SKUs', 'Sistema Actual', 'Pedidos/Mes',
-                        'Empleados', 'Decisor', 'Interés Demo', 'Agendó Demo', 'Conclusión', 'Notas'],
-        'clientes':    ['Fecha', 'Empresa', 'Giro', 'Ciudad', 'Plan', 'Monto MXN', 'Estado', 'Notas'],
-        'seguimiento': ['Empresa', 'Estado Pipeline', 'Próxima Acción', 'Fecha Próximo Contacto',
-                        'Notas', 'Responsable'],
-        'mensajes':    ['Intro Llamada', 'Presentación Supratech', 'Manejo de Objeciones',
-                        'Cierre Demo', 'Follow-up WhatsApp', 'No Interesa - Cierre Amable'],
-    }
-    if key in headers:
-        ws.append_row(headers[key])
+    if key in SHEET_HEADERS:
+        ws.append_row(SHEET_HEADERS[key])
 
 # ─────────────────────────────────────────────
 # CACHÉ (TTL 5 min — igual que Nioval)
@@ -198,6 +201,13 @@ CATEGORIAS_IMPORTADOR = [
     'Distribuidoras de equipo de seguridad industrial',
 ]
 
+def _relevancia(r):
+    """Score de relevancia: prioriza reseñas altas + buena calificación."""
+    import math
+    reviews = r.get('Reseñas', 0) or 0
+    rating  = r.get('Calificación', 0) or 0
+    return round(rating * math.log1p(reviews), 2)
+
 def _buscar_negocios(gmaps, categoria, ciudad):
     resultados = []
     query = f'{categoria} en {ciudad} Mexico'
@@ -208,28 +218,32 @@ def _buscar_negocios(gmaps, categoria, ciudad):
         if pid in ids_vistos:
             continue
         ids_vistos.add(pid)
-        rating = place.get('rating', 0) or 0
+        rating  = place.get('rating', 0) or 0
         reviews = place.get('user_ratings_total', 0) or 0
         if rating < 3.0 or reviews < 3:
             continue
         det = gmaps.place(place_id=pid, fields=[
             'name','formatted_phone_number','formatted_address',
-            'website','opening_hours','geometry','business_status'
+            'website','opening_hours','geometry','business_status','url'
         ]).get('result', {})
         tel = det.get('formatted_phone_number', '')
         if not tel:
             continue
+        maps_url = det.get('url', f'https://www.google.com/maps/place/?q=place_id:{pid}')
         resultados.append({
-            'Nombre':     det.get('name', ''),
-            'Ciudad':     ciudad,
-            'Giro':       categoria,
-            'Teléfono':   tel.replace(' ', '').replace('-', ''),
-            'Dirección':  det.get('formatted_address', ''),
-            'Sitio Web':  det.get('website', ''),
+            'Nombre':       det.get('name', ''),
+            'Ciudad':       ciudad,
+            'Giro':         categoria,
+            'Teléfono':     tel.replace(' ', '').replace('-', ''),
+            'Dirección':    det.get('formatted_address', ''),
+            'Sitio Web':    det.get('website', ''),
             'Calificación': rating,
-            'Reseñas':    reviews,
-            'Fecha':      datetime.now().strftime('%d/%m/%Y'),
+            'Reseñas':      reviews,
+            'Maps Link':    maps_url,
+            'Fecha':        datetime.now().strftime('%d/%m/%Y'),
         })
+    # Ordenar por relevancia descendente
+    resultados.sort(key=_relevancia, reverse=True)
     return resultados
 
 def _exportar_a_prospectos(resultados, ciudad):
@@ -239,8 +253,22 @@ def _exportar_a_prospectos(resultados, ciudad):
     nuevos = [r for r in resultados if r['Nombre'].lower() not in nombres_existentes]
     if nuevos:
         rows = [[
-            r['Nombre'], r.get('Empresa', r['Nombre']), r['Giro'], r['Ciudad'],
-            r['Teléfono'], '', '', 'Por llamar', 'Importador', r['Fecha'], ''
+            r['Nombre'],
+            r['Nombre'],               # Empresa = Nombre del negocio
+            r['Giro'],
+            r['Ciudad'],
+            r['Teléfono'],
+            '',                        # WhatsApp (vacío, se llena al contactar)
+            '',                        # Empleados
+            'Por llamar',
+            'Importador Maps',
+            r['Fecha'],
+            '',                        # Notas
+            str(r['Calificación']),
+            str(r['Reseñas']),
+            r['Dirección'],
+            r.get('Sitio Web', ''),
+            r.get('Maps Link', ''),
         ] for r in nuevos]
         ws.append_rows(rows)
     invalidar(['prospectos'])
@@ -298,37 +326,34 @@ def formulario():
 # ─────────────────────────────────────────────
 @app.route('/setup')
 def setup():
-    """Inicializa encabezados en todas las hojas. Visitar una sola vez."""
-    HEADERS = {
-        'prospectos':  ['Nombre', 'Empresa', 'Giro', 'Ciudad', 'Teléfono', 'WhatsApp',
-                        'Empleados', 'Estado', 'Origen', 'Fecha', 'Notas'],
-        'llamadas':    ['Timestamp', 'Empresa', 'Respondió', 'SKUs', 'Sistema Actual',
-                        'Pedidos/Mes', 'Empleados', 'Decisor', 'Interés Demo',
-                        'Agendó Demo', 'Conclusión', 'Notas'],
-        'clientes':    ['Fecha', 'Empresa', 'Giro', 'Ciudad', 'Plan', 'Monto MXN',
-                        'Estado', 'Notas'],
-        'seguimiento': ['Empresa', 'Estado Pipeline', 'Próxima Acción',
-                        'Fecha Próximo Contacto', 'Notas', 'Responsable'],
-        'mensajes':    ['Intro Llamada', 'Presentación Supratech', 'Manejo de Objeciones',
-                        'Cierre Demo', 'Follow-up WhatsApp', 'No Interesa - Cierre Amable'],
-    }
+    """Inicializa y actualiza encabezados en todas las hojas."""
     resultados = {}
-    for key, headers in HEADERS.items():
+    for key, headers in SHEET_HEADERS.items():
         try:
-            ws   = get_worksheet(key)
-            fila = ws.row_values(1)
-            if fila:
-                resultados[key] = f'Ya tiene encabezados: {fila}'
-            else:
-                ws.append_row(headers)
-                resultados[key] = f'✓ Encabezados agregados ({len(headers)} columnas)'
-        except Exception as e:
-            resultados[key] = f'Error: {str(e)}'
+            ws        = get_worksheet(key)
+            fila_act  = ws.row_values(1)
+            faltantes = [h for h in headers if h not in fila_act]
 
-    html = '<h2 style="font-family:monospace;padding:20px">Setup Supratech Sheets</h2><ul style="font-family:monospace;padding:20px">'
+            if not fila_act:
+                # Hoja vacía — escribir encabezados completos
+                ws.append_row(headers)
+                resultados[key] = f'✓ {len(headers)} encabezados creados'
+            elif faltantes:
+                # Agregar columnas que faltan al final
+                next_col = len(fila_act) + 1
+                cells = [gspread.Cell(1, next_col + i, h) for i, h in enumerate(faltantes)]
+                ws.update_cells(cells)
+                resultados[key] = f'✓ {len(faltantes)} columnas nuevas agregadas: {faltantes}'
+            else:
+                resultados[key] = f'✓ Completo ({len(fila_act)} columnas)'
+        except Exception as e:
+            resultados[key] = f'❌ Error: {str(e)}'
+
+    html = '''<html><body style="font-family:monospace;padding:30px;background:#f8f9ff">
+    <h2 style="color:#4361ee">Setup — Supratech Sheets</h2><ul style="line-height:2">'''
     for k, v in resultados.items():
         html += f'<li><b>{k}</b>: {v}</li>'
-    html += '</ul><p style="font-family:monospace;padding:20px"><a href="/">← Ir al panel</a></p>'
+    html += '</ul><br><a href="/" style="background:#4361ee;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none">← Ir al panel</a></body></html>'
     return html
 
 @app.route('/api/refresh', methods=['POST'])
