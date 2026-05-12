@@ -292,6 +292,41 @@ def formulario():
 # ─────────────────────────────────────────────
 # API — REFRESH / DEBUG
 # ─────────────────────────────────────────────
+@app.route('/setup')
+def setup():
+    """Inicializa encabezados en todas las hojas. Visitar una sola vez."""
+    HEADERS = {
+        'prospectos':  ['Nombre', 'Empresa', 'Giro', 'Ciudad', 'Teléfono', 'WhatsApp',
+                        'Empleados', 'Estado', 'Origen', 'Fecha', 'Notas'],
+        'llamadas':    ['Timestamp', 'Empresa', 'Respondió', 'SKUs', 'Sistema Actual',
+                        'Pedidos/Mes', 'Empleados', 'Decisor', 'Interés Demo',
+                        'Agendó Demo', 'Conclusión', 'Notas'],
+        'clientes':    ['Fecha', 'Empresa', 'Giro', 'Ciudad', 'Plan', 'Monto MXN',
+                        'Estado', 'Notas'],
+        'seguimiento': ['Empresa', 'Estado Pipeline', 'Próxima Acción',
+                        'Fecha Próximo Contacto', 'Notas', 'Responsable'],
+        'mensajes':    ['Intro Llamada', 'Presentación Supratech', 'Manejo de Objeciones',
+                        'Cierre Demo', 'Follow-up WhatsApp', 'No Interesa - Cierre Amable'],
+    }
+    resultados = {}
+    for key, headers in HEADERS.items():
+        try:
+            ws   = get_worksheet(key)
+            fila = ws.row_values(1)
+            if fila:
+                resultados[key] = f'Ya tiene encabezados: {fila}'
+            else:
+                ws.append_row(headers)
+                resultados[key] = f'✓ Encabezados agregados ({len(headers)} columnas)'
+        except Exception as e:
+            resultados[key] = f'Error: {str(e)}'
+
+    html = '<h2 style="font-family:monospace;padding:20px">Setup Supratech Sheets</h2><ul style="font-family:monospace;padding:20px">'
+    for k, v in resultados.items():
+        html += f'<li><b>{k}</b>: {v}</li>'
+    html += '</ul><p style="font-family:monospace;padding:20px"><a href="/">← Ir al panel</a></p>'
+    return html
+
 @app.route('/api/refresh', methods=['POST'])
 def api_refresh():
     data = request.get_json() or {}
