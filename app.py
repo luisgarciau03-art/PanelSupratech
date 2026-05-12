@@ -43,7 +43,7 @@ SHEET_TABS = {
 }
 
 IMGBB_API_KEY   = os.environ.get('IMGBB_API_KEY', '')
-GMAPS_API_KEY   = os.environ.get('GMAPS_API_KEY', '')
+GMAPS_API_KEY   = os.environ.get('GOOGLE_PLACES_API_KEY', '') or os.environ.get('GMAPS_API_KEY', '')
 TELEGRAM_TOKEN  = os.environ.get('TELEGRAM_TOKEN', '')
 TELEGRAM_CHAT   = os.environ.get('TELEGRAM_CHAT_ID', '')
 
