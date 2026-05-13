@@ -111,22 +111,73 @@ def _init_headers(ws, key):
         ws.append_row(SHEET_HEADERS[key])
 
 # ─────────────────────────────────────────────
-# CACHÉ (TTL 5 min — igual que Nioval)
+# CACHÉ + RATE LIMITING
+# TTL: 10 min en prod, devuelve stale en error 429
+# Semáforo: máx 2 lecturas simultáneas a Sheets
 # ─────────────────────────────────────────────
-_cache    = {}
-CACHE_TTL = 300
+_cache        = {}
+CACHE_TTL     = 600          # 10 minutos
+CACHE_STALE   = 3600         # devolver stale hasta 1h si Sheets falla
+_sheets_sem   = threading.Semaphore(2)   # max 2 lecturas simultáneas
+_key_locks    = {}           # evita lecturas duplicadas por clave
+_key_locks_lock = threading.Lock()
+
+def _get_key_lock(key):
+    with _key_locks_lock:
+        if key not in _key_locks:
+            _key_locks[key] = threading.Lock()
+        return _key_locks[key]
+
+def _read_sheet_with_backoff(ws, max_retries=3):
+    """Lee la hoja con reintentos y backoff exponencial en 429."""
+    import gspread.exceptions
+    for attempt in range(max_retries):
+        try:
+            with _sheets_sem:
+                return ws.get_all_values()
+        except Exception as e:
+            msg = str(e)
+            if '429' in msg or 'Quota' in msg or 'quota' in msg:
+                wait = 2 ** attempt + 1   # 2s, 3s, 5s
+                print(f'[SHEETS] 429 quota — esperando {wait}s (intento {attempt+1})')
+                time.sleep(wait)
+                if attempt == max_retries - 1:
+                    raise
+            else:
+                raise
+    return []
 
 def get_data(key):
-    now = time.time()
+    now      = time.time()
+    key_lock = _get_key_lock(key)
+
+    # Retornar caché fresca sin lock
     if key in _cache:
         data, ts = _cache[key]
         if now - ts < CACHE_TTL:
             return data
-    ws   = get_worksheet(key)
-    rows = ws.get_all_values()
-    data = values_to_records(rows)
-    _cache[key] = (data, now)
-    return data
+
+    # Solo un hilo por clave lee Sheets a la vez
+    with key_lock:
+        # Re-check después de adquirir lock (otro hilo pudo haber actualizado)
+        if key in _cache:
+            data, ts = _cache[key]
+            if now - ts < CACHE_TTL:
+                return data
+        try:
+            ws   = get_worksheet(key)
+            rows = _read_sheet_with_backoff(ws)
+            data = values_to_records(rows)
+            _cache[key] = (data, now)
+            return data
+        except Exception as e:
+            # En error 429 u otro: devolver datos stale si existen (hasta 1h)
+            if key in _cache:
+                data, ts = _cache[key]
+                if now - ts < CACHE_STALE:
+                    print(f'[CACHE] Devolviendo datos stale para "{key}" — {e}')
+                    return data
+            raise
 
 def values_to_records(rows):
     if not rows:
@@ -398,8 +449,11 @@ def api_debug():
 @app.route('/api/prospectos/stats')
 def api_stats():
     try:
+        # Leer secuencialmente para no disparar múltiples requests simultáneos
         prospectos = get_data('prospectos')
+        time.sleep(0.3)
         llamadas   = get_data('llamadas')
+        time.sleep(0.3)
         clientes   = get_data('clientes')
 
         total = len(prospectos)
