@@ -844,18 +844,20 @@ function buildChartBar(id, ciudades) {
 // ─── POR LLAMAR ──────────────────────────────────
 async function loadPorLlamar() {
   const d = await apiFetch('/api/prospectos/pendientes');
-  state.data['por-llamar'] = d.prospectos || [];
-  state.filtered['llamar'] = state.data['por-llamar'];
-  document.getElementById('count-llamar').textContent = `${state.data['por-llamar'].length} prospectos`;
-  renderTabla('llamar', ['Nombre','Empresa','Giro','Ciudad','Teléfono','WhatsApp','Empleados','Acciones'], state.filtered['llamar']);
+  const lista = (d.prospectos || []).sort((a,b) => parseInt(b['Reseñas']||0) - parseInt(a['Reseñas']||0));
+  state.data['por-llamar'] = lista;
+  state.filtered['llamar'] = lista;
+  document.getElementById('count-llamar').textContent = `${lista.length} prospectos`;
+  renderTabla('llamar', ['Nombre','Empresa','Giro','Ciudad','Teléfono','WhatsApp','Reseñas','Calificación','Acciones'], state.filtered['llamar']);
 }
 
 // ─── PROSPECTOS ──────────────────────────────────
 async function loadProspectos() {
   const d = await apiFetch('/api/prospectos/lista');
-  state.data.prospectos = d.prospectos || [];
-  state.filtered.prosp  = state.data.prospectos;
-  renderTabla('prosp', ['Nombre','Empresa','Giro','Ciudad','Teléfono','Estado','Empleados','Origen','Acciones'], state.filtered.prosp);
+  const lista = (d.prospectos || []).sort((a,b) => parseInt(b['Reseñas']||0) - parseInt(a['Reseñas']||0));
+  state.data.prospectos = lista;
+  state.filtered.prosp  = lista;
+  renderTabla('prosp', ['Nombre','Empresa','Giro','Ciudad','Teléfono','Estado','Reseñas','Calificación','Maps Link','Acciones'], state.filtered.prosp);
 }
 
 // ─── LLAMADAS ────────────────────────────────────
@@ -944,6 +946,21 @@ function renderTabla(key, cols, data) {
 }
 
 function renderCell(key, col, row) {
+  if (col === 'Maps Link') {
+    const url = row['Maps Link'] || '';
+    return url
+      ? `<td><a href="${url}" target="_blank" class="action-btn ab-edit" style="font-size:0.7em">🗺 Ver</a></td>`
+      : `<td><span style="color:#d1d5db">—</span></td>`;
+  }
+  if (col === 'Calificación') {
+    const val = parseFloat(row['Calificación'] || 0);
+    const color = val >= 4.5 ? '#28a745' : val >= 4.0 ? '#f4a422' : '#6b7280';
+    return val ? `<td style="color:${color};font-weight:700">⭐ ${val}</td>` : `<td>—</td>`;
+  }
+  if (col === 'Reseñas') {
+    const val = parseInt(row['Reseñas'] || 0);
+    return val ? `<td style="font-weight:600;color:#4361ee">${val.toLocaleString('es-MX')}</td>` : `<td>—</td>`;
+  }
   if (col === 'Acciones') {
     const tel = (row['Teléfono']||'').replace(/\D/g,'');
     const wa  = (row['WhatsApp']||row['Teléfono']||'').replace(/\D/g,'');

@@ -161,9 +161,10 @@ def sheet_update_row(ws, row_num, updates: dict):
         ws.update_cells(cells)
 
 def get_prospecto_pendiente(skip=0):
-    """Devuelve el siguiente prospecto sin llamada (Estado vacío o 'Por llamar')."""
+    """Devuelve el siguiente prospecto pendiente ordenado por reseñas descendente."""
     data = get_data('prospectos')
     pendientes = [p for p in data if p.get('Estado', '').strip() in ('', 'Por llamar')]
+    pendientes.sort(key=lambda p: int(p.get('Reseñas', 0) or 0), reverse=True)
     if skip < len(pendientes):
         return pendientes[skip]
     return None
@@ -202,11 +203,11 @@ CATEGORIAS_IMPORTADOR = [
 ]
 
 def _relevancia(r):
-    """Score de relevancia: prioriza reseñas altas + buena calificación."""
-    import math
-    reviews = r.get('Reseñas', 0) or 0
-    rating  = r.get('Calificación', 0) or 0
-    return round(rating * math.log1p(reviews), 2)
+    """Ordena por número de reseñas descendente (más opiniones = más establecido)."""
+    try:
+        return int(r.get('Reseñas', 0) or 0)
+    except:
+        return 0
 
 def _buscar_negocios(gmaps, categoria, ciudad):
     resultados = []
