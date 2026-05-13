@@ -558,6 +558,17 @@
 
   <!-- ─── LLAMADAS ─── -->
   <div class="section" id="sec-llamadas">
+    <!-- Tabs Filtro / Pitch -->
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <button class="ll-tab btn btn-warning active" data-etapa="filtro" onclick="loadLlamadas('filtro')"
+        style="border-radius:20px;padding:7px 20px;font-size:0.8em;">
+        🔍 Llamadas Filtro
+      </button>
+      <button class="ll-tab btn btn-primary" data-etapa="pitch" onclick="loadLlamadas('pitch')"
+        style="border-radius:20px;padding:7px 20px;font-size:0.8em;background:#4361ee;">
+        🎯 Llamadas Pitch
+      </button>
+    </div>
     <div class="table-card">
       <div class="table-toolbar">
         <input type="text" id="buscar-ll" placeholder="🔍 Buscar empresa..." oninput="filtrarTabla('ll')">
@@ -861,11 +872,24 @@ async function loadProspectos() {
 }
 
 // ─── LLAMADAS ────────────────────────────────────
-async function loadLlamadas() {
-  const d = await apiFetch('/api/prospectos/llamadas');
+let llamadasEtapa = 'filtro';
+
+async function loadLlamadas(etapa) {
+  if (etapa) llamadasEtapa = etapa;
+  // Actualizar tabs visuales
+  document.querySelectorAll('.ll-tab').forEach(t => t.classList.remove('active'));
+  const activeTab = document.querySelector(`.ll-tab[data-etapa="${llamadasEtapa}"]`);
+  if (activeTab) activeTab.classList.add('active');
+
+  const d = await apiFetch(`/api/prospectos/llamadas?etapa=${llamadasEtapa}`);
   state.data.llamadas  = d.llamadas || [];
   state.filtered.ll    = state.data.llamadas;
-  const cols = ['Timestamp','Empresa','Respondió','Sistema Actual','Pedidos/Mes','Empleados','Interés Demo','Agendó Demo','Conclusión'];
+
+  const colsFiltro = ['Timestamp','Empresa','Ciudad','Respondió','Quién Atendió',
+                      'Pasaron con Gerente','Nombre Gerente','Tel Directo','Correo Gerente','Conclusión'];
+  const colsPitch  = ['Timestamp','Empresa','Ciudad','Nombre Gerente','Respondió',
+                      'SKUs','Sistema Actual','Pedidos/Mes','Interés Demo','Agendó Demo','Conclusión'];
+  const cols = llamadasEtapa === 'pitch' ? colsPitch : colsFiltro;
   renderTabla('ll', cols, state.filtered.ll);
 }
 

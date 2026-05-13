@@ -25,21 +25,23 @@ app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 _MASTER_SHEET = '1TV4nrtrHlkLPFVhzsMTjrIMvP9mgHkh9MSjiN1a-HR4'
 
 SHEET_IDS = {
-    'prospectos':  os.environ.get('PROSPECTOS_SHEET_ID',  _MASTER_SHEET),
-    'llamadas':    os.environ.get('LLAMADAS_SHEET_ID',    _MASTER_SHEET),
-    'clientes':    os.environ.get('CLIENTES_SHEET_ID',    _MASTER_SHEET),
-    'seguimiento': os.environ.get('SEGUIMIENTO_SHEET_ID', _MASTER_SHEET),
-    'mensajes':    os.environ.get('MENSAJES_SHEET_ID',    _MASTER_SHEET),
+    'prospectos':      os.environ.get('PROSPECTOS_SHEET_ID',  _MASTER_SHEET),
+    'llamadas_filtro': os.environ.get('LLAMADAS_SHEET_ID',    _MASTER_SHEET),
+    'llamadas_pitch':  os.environ.get('LLAMADAS_SHEET_ID',    _MASTER_SHEET),
+    'clientes':        os.environ.get('CLIENTES_SHEET_ID',    _MASTER_SHEET),
+    'seguimiento':     os.environ.get('SEGUIMIENTO_SHEET_ID', _MASTER_SHEET),
+    'mensajes':        os.environ.get('MENSAJES_SHEET_ID',    _MASTER_SHEET),
 }
 
 # Si prefieres un solo spreadsheet con múltiples hojas, pon el mismo ID en todos
 # y diferencia por nombre de hoja (SHEET_TABS abajo).
 SHEET_TABS = {
-    'prospectos':  os.environ.get('TAB_PROSPECTOS',  'PROSPECTOS'),
-    'llamadas':    os.environ.get('TAB_LLAMADAS',    'LLAMADAS'),
-    'clientes':    os.environ.get('TAB_CLIENTES',    'CLIENTES'),
-    'seguimiento': os.environ.get('TAB_SEGUIMIENTO', 'SEGUIMIENTO'),
-    'mensajes':    os.environ.get('TAB_MENSAJES',    'MENSAJES'),
+    'prospectos':       os.environ.get('TAB_PROSPECTOS',       'PROSPECTOS'),
+    'llamadas_filtro':  os.environ.get('TAB_LLAMADAS_FILTRO',  'LLAMADAS FILTRO'),
+    'llamadas_pitch':   os.environ.get('TAB_LLAMADAS_PITCH',   'LLAMADAS PITCH'),
+    'clientes':         os.environ.get('TAB_CLIENTES',         'CLIENTES'),
+    'seguimiento':      os.environ.get('TAB_SEGUIMIENTO',      'SEGUIMIENTO'),
+    'mensajes':         os.environ.get('TAB_MENSAJES',         'MENSAJES'),
 }
 
 IMGBB_API_KEY   = os.environ.get('IMGBB_API_KEY', '')
@@ -94,10 +96,14 @@ SHEET_HEADERS = {
                     'Empleados', 'Estado', 'Etapa', 'Origen', 'Fecha', 'Notas',
                     'Nombre Gerente', 'Tel Directo', 'Correo Gerente',
                     'Calificación', 'Reseñas', 'Dirección', 'Sitio Web', 'Maps Link'],
-    'llamadas':    ['Timestamp', 'Empresa', 'Etapa', 'Respondió', 'Quién Atendió',
-                    'Pasaron con Gerente', 'Nombre Gerente', 'Tel Directo', 'Correo Gerente',
-                    'SKUs', 'Sistema Actual', 'Pedidos/Mes', 'Empleados',
-                    'Interés Demo', 'Agendó Demo', 'Conclusión', 'Notas'],
+    'llamadas_filtro': ['Timestamp', 'Empresa', 'Ciudad', 'Reseñas',
+                        'Respondió', 'Quién Atendió', 'Pasaron con Gerente',
+                        'Nombre Gerente', 'Tel Directo', 'Correo Gerente',
+                        'Conclusión', 'Notas'],
+    'llamadas_pitch':  ['Timestamp', 'Empresa', 'Ciudad', 'Nombre Gerente',
+                        'Respondió', 'Tipo Negocio', 'SKUs', 'Sistema Actual',
+                        'Pedidos/Mes', 'Empleados', 'Interés Demo', 'Agendó Demo',
+                        'Conclusión', 'Notas'],
     'clientes':    ['Fecha', 'Empresa', 'Giro', 'Ciudad', 'Plan', 'Monto MXN', 'Estado', 'Notas'],
     'seguimiento': ['Empresa', 'Estado Pipeline', 'Próxima Acción', 'Fecha Próximo Contacto',
                     'Notas', 'Responsable'],
@@ -516,7 +522,9 @@ def api_pendientes():
 @app.route('/api/prospectos/llamadas')
 def api_llamadas():
     try:
-        return jsonify({'llamadas': get_data('llamadas')})
+        etapa = request.args.get('etapa', 'filtro').lower()
+        key   = 'llamadas_pitch' if etapa == 'pitch' else 'llamadas_filtro'
+        return jsonify({'llamadas': get_data(key), 'etapa': etapa})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -576,29 +584,42 @@ def api_guardar_llamada():
         d  = request.get_json() or {}
         ts = datetime.now().strftime('%Y-%m-%d %H:%M')
 
-        # Guardar resultado en hoja LLAMADAS
-        ws_ll = get_worksheet('llamadas')
         etapa = d.get('etapa', 'Filtro')
 
-        ws_ll.append_row([
-            ts,
-            d.get('empresa', ''),
-            etapa,
-            d.get('respondio', ''),
-            d.get('quien_atendio', ''),
-            d.get('pasaron_gerente', ''),
-            d.get('nombre_gerente', ''),
-            d.get('tel_directo', ''),
-            d.get('correo_gerente', ''),
-            d.get('skus', ''),
-            d.get('sistema_actual', ''),
-            d.get('pedidos_mes', ''),
-            d.get('empleados', ''),
-            d.get('interes_demo', ''),
-            d.get('agendo_demo', ''),
-            d.get('conclusion', ''),
-            d.get('notas', ''),
-        ])
+        if etapa == 'Filtro':
+            ws_ll = get_worksheet('llamadas_filtro')
+            ws_ll.append_row([
+                ts,
+                d.get('empresa', ''),
+                d.get('ciudad', ''),
+                d.get('resenas', ''),
+                d.get('respondio', ''),
+                d.get('quien_atendio', ''),
+                d.get('pasaron_gerente', ''),
+                d.get('nombre_gerente', ''),
+                d.get('tel_directo', ''),
+                d.get('correo_gerente', ''),
+                d.get('conclusion', ''),
+                d.get('notas', ''),
+            ])
+        else:
+            ws_ll = get_worksheet('llamadas_pitch')
+            ws_ll.append_row([
+                ts,
+                d.get('empresa', ''),
+                d.get('ciudad', ''),
+                d.get('nombre_gerente', ''),
+                d.get('respondio', ''),
+                d.get('tipo_negocio', ''),
+                d.get('skus', ''),
+                d.get('sistema_actual', ''),
+                d.get('pedidos_mes', ''),
+                d.get('empleados', ''),
+                d.get('interes_demo', ''),
+                d.get('agendo_demo', ''),
+                d.get('conclusion', ''),
+                d.get('notas', ''),
+            ])
 
         # Actualizar prospecto
         row = d.get('_row')
@@ -624,7 +645,7 @@ def api_guardar_llamada():
                 f'{d.get("ciudad","")} · {d.get("empleados","")} empleados'
             )
 
-        invalidar(['prospectos', 'llamadas'])
+        invalidar(['prospectos', 'llamadas_filtro', 'llamadas_pitch'])
         return jsonify({'ok': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
