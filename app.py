@@ -221,7 +221,7 @@ def _buscar_negocios(gmaps, categoria, ciudad):
         ids_vistos.add(pid)
         rating  = place.get('rating', 0) or 0
         reviews = place.get('user_ratings_total', 0) or 0
-        if rating < 3.0 or reviews < 3:
+        if reviews < 100:
             continue
         det = gmaps.place(place_id=pid, fields=[
             'name','formatted_phone_number','formatted_address',
