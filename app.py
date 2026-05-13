@@ -91,11 +91,13 @@ def get_worksheet(key):
 
 SHEET_HEADERS = {
     'prospectos':  ['Nombre', 'Empresa', 'Giro', 'Ciudad', 'Teléfono', 'WhatsApp',
-                    'Empleados', 'Estado', 'Origen', 'Fecha', 'Notas',
+                    'Empleados', 'Estado', 'Etapa', 'Origen', 'Fecha', 'Notas',
+                    'Nombre Gerente', 'Tel Directo', 'Correo Gerente',
                     'Calificación', 'Reseñas', 'Dirección', 'Sitio Web', 'Maps Link'],
-    'llamadas':    ['Timestamp', 'Empresa', 'Respondió', 'SKUs', 'Sistema Actual',
-                    'Pedidos/Mes', 'Empleados', 'Decisor', 'Interés Demo',
-                    'Agendó Demo', 'Conclusión', 'Notas'],
+    'llamadas':    ['Timestamp', 'Empresa', 'Etapa', 'Respondió', 'Quién Atendió',
+                    'Pasaron con Gerente', 'Nombre Gerente', 'Tel Directo', 'Correo Gerente',
+                    'SKUs', 'Sistema Actual', 'Pedidos/Mes', 'Empleados',
+                    'Interés Demo', 'Agendó Demo', 'Conclusión', 'Notas'],
     'clientes':    ['Fecha', 'Empresa', 'Giro', 'Ciudad', 'Plan', 'Monto MXN', 'Estado', 'Notas'],
     'seguimiento': ['Empresa', 'Estado Pipeline', 'Próxima Acción', 'Fecha Próximo Contacto',
                     'Notas', 'Responsable'],
@@ -160,10 +162,17 @@ def sheet_update_row(ws, row_num, updates: dict):
     if cells:
         ws.update_cells(cells)
 
-def get_prospecto_pendiente(skip=0):
-    """Devuelve el siguiente prospecto pendiente ordenado por reseñas descendente."""
+def get_prospecto_pendiente(skip=0, etapa='Filtro'):
+    """Devuelve el siguiente prospecto pendiente por etapa, ordenado por reseñas."""
     data = get_data('prospectos')
-    pendientes = [p for p in data if p.get('Estado', '').strip() in ('', 'Por llamar')]
+    if etapa == 'Filtro':
+        pendientes = [p for p in data if
+                      p.get('Estado', '').strip() in ('', 'Por llamar') and
+                      p.get('Etapa', 'Filtro') in ('', 'Filtro')]
+    else:  # Pitch
+        pendientes = [p for p in data if
+                      p.get('Estado', '').strip() == 'Contacto obtenido' and
+                      p.get('Etapa', '') == 'Pitch']
     pendientes.sort(key=lambda p: int(p.get('Reseñas', 0) or 0), reverse=True)
     if skip < len(pendientes):
         return pendientes[skip]
@@ -255,16 +264,20 @@ def _exportar_a_prospectos(resultados, ciudad):
     if nuevos:
         rows = [[
             r['Nombre'],
-            r['Nombre'],               # Empresa = Nombre del negocio
+            r['Nombre'],
             r['Giro'],
             r['Ciudad'],
             r['Teléfono'],
-            '',                        # WhatsApp (vacío, se llena al contactar)
-            '',                        # Empleados
+            '',              # WhatsApp
+            '',              # Empleados
             'Por llamar',
+            'Filtro',        # Etapa inicial — obtener contacto del gerente
             'Importador Maps',
             r['Fecha'],
-            '',                        # Notas
+            '',              # Notas
+            '',              # Nombre Gerente
+            '',              # Tel Directo
+            '',              # Correo Gerente
             str(r['Calificación']),
             str(r['Reseñas']),
             r['Dirección'],
@@ -496,11 +509,12 @@ def api_actualizar_prospecto():
 # ─────────────────────────────────────────────
 @app.route('/api/formulario/siguiente')
 def api_siguiente():
-    skip = int(request.args.get('skip', 0))
-    p = get_prospecto_pendiente(skip)
+    skip  = int(request.args.get('skip', 0))
+    etapa = request.args.get('etapa', 'Filtro')
+    p = get_prospecto_pendiente(skip, etapa)
     if not p:
         return jsonify({'fin': True})
-    return jsonify({'fin': False, 'prospecto': p})
+    return jsonify({'fin': False, 'prospecto': p, 'etapa': etapa})
 
 @app.route('/api/formulario/guardar', methods=['POST'])
 def api_guardar_llamada():
@@ -510,27 +524,44 @@ def api_guardar_llamada():
 
         # Guardar resultado en hoja LLAMADAS
         ws_ll = get_worksheet('llamadas')
+        etapa = d.get('etapa', 'Filtro')
+
         ws_ll.append_row([
             ts,
             d.get('empresa', ''),
+            etapa,
             d.get('respondio', ''),
+            d.get('quien_atendio', ''),
+            d.get('pasaron_gerente', ''),
+            d.get('nombre_gerente', ''),
+            d.get('tel_directo', ''),
+            d.get('correo_gerente', ''),
             d.get('skus', ''),
             d.get('sistema_actual', ''),
             d.get('pedidos_mes', ''),
             d.get('empleados', ''),
-            d.get('decisor', ''),
             d.get('interes_demo', ''),
             d.get('agendo_demo', ''),
             d.get('conclusion', ''),
             d.get('notas', ''),
         ])
 
-        # Actualizar estado del prospecto en hoja PROSPECTOS
+        # Actualizar prospecto
         row = d.get('_row')
         if row:
             ws_pr = get_worksheet('prospectos')
-            nuevo_estado = _conclusion_to_estado(d.get('conclusion', ''))
-            sheet_update_row(ws_pr, int(row), {'Estado': nuevo_estado})
+            updates = {'Estado': _conclusion_to_estado(d.get('conclusion', ''))}
+            if etapa == 'Filtro':
+                # Si obtuvimos contacto → pasar a etapa Pitch
+                if d.get('nombre_gerente') or d.get('tel_directo') or d.get('correo_gerente'):
+                    updates['Etapa']          = 'Pitch'
+                    updates['Estado']         = 'Contacto obtenido'
+                    updates['Nombre Gerente'] = d.get('nombre_gerente', '')
+                    updates['Tel Directo']    = d.get('tel_directo', '')
+                    updates['Correo Gerente'] = d.get('correo_gerente', '')
+                else:
+                    updates['Etapa'] = 'Filtro'
+            sheet_update_row(ws_pr, int(row), updates)
 
         # Si agendó demo → notificar
         if d.get('agendo_demo') == 'Sí':

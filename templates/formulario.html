@@ -15,409 +15,417 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
       padding: 20px;
       color: #fff;
     }
 
     .header {
-      width: 100%;
-      max-width: 560px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      padding: 14px 0;
+      width: 100%; max-width: 580px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; margin-bottom: 14px;
     }
-    .header .brand { font-weight: 700; font-size: 1em; color: rgba(255,255,255,0.9); }
+    .header .brand { font-weight: 700; font-size: 1em; }
     .header a { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.8em; }
-    .header a:hover { color: #fff; }
 
-    /* ── CONTACT CARD ── */
-    .contact-card {
-      width: 100%;
-      max-width: 560px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 20px;
-      padding: 22px 24px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
+    /* Etapa selector */
+    .etapa-selector {
+      width: 100%; max-width: 580px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-bottom: 16px;
     }
-
-    .contact-info .c-empresa { font-size: 1.1em; font-weight: 700; }
-    .contact-info .c-meta    { font-size: 0.78em; color: rgba(255,255,255,0.55); margin-top: 3px; }
-
-    .contact-actions { display: flex; gap: 10px; }
-    .c-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 9px 16px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 0.82em;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
+    .etapa-btn {
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.6);
       font-family: inherit;
-      transition: all 0.15s;
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .etapa-btn:hover { border-color: rgba(255,255,255,0.4); color: #fff; }
+    .etapa-btn.active-filtro { background: #f4a422; border-color: #f4a422; color: #fff; }
+    .etapa-btn.active-pitch  { background: #4361ee; border-color: #4361ee; color: #fff; }
+    .etapa-btn .eb-icon { font-size: 1.4em; display: block; margin-bottom: 4px; }
+    .etapa-btn .eb-label { font-size: 0.8em; opacity: 0.85; display: block; margin-top: 2px; font-weight: 400; }
+
+    /* Contact card */
+    .contact-card {
+      width: 100%; max-width: 580px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 18px 22px;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .contact-card.show { display: block; }
+    .c-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+    .c-empresa { font-size: 1.05em; font-weight: 700; }
+    .c-meta    { font-size: 0.76em; color: rgba(255,255,255,0.5); margin-top: 3px; }
+    .c-gerente {
+      margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.82em; color: #f4a422; font-weight: 600;
+    }
+    .c-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .c-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 7px 14px; border-radius: 8px;
+      font-weight: 700; font-size: 0.78em; text-decoration: none;
+      border: none; cursor: pointer; font-family: inherit;
     }
     .c-btn-call { background: #28a745; color: #fff; }
-    .c-btn-call:hover { background: #218838; }
     .c-btn-wa   { background: #25D366; color: #fff; }
-    .c-btn-wa:hover { background: #1da851; }
+    .c-btn-dir  { background: #4361ee; color: #fff; }
 
-    /* ── PROGRESS ── */
-    .progress-wrap { width: 100%; max-width: 560px; margin-bottom: 16px; }
-    .progress-steps {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 6px;
-    }
+    /* Progress */
+    .progress-wrap { width: 100%; max-width: 580px; margin-bottom: 14px; display: none; }
+    .progress-steps { display: flex; gap: 4px; margin-bottom: 5px; }
     .step-dot {
-      flex: 1;
-      height: 4px;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.15);
+      flex: 1; height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.12);
       transition: background 0.3s;
     }
-    .step-dot.done    { background: #4361ee; }
-    .step-dot.active  { background: #f4a422; }
-    .progress-label   { font-size: 0.72em; color: rgba(255,255,255,0.45); text-align: center; }
+    .step-dot.done   { background: #4361ee; }
+    .step-dot.active { background: #f4a422; }
+    .progress-label  { font-size: 0.7em; color: rgba(255,255,255,0.4); text-align: center; }
 
-    /* ── STEP CARD ── */
+    /* Step card */
     .step-card {
-      width: 100%;
-      max-width: 560px;
-      background: #fff;
-      border-radius: 20px;
-      padding: 28px;
-      color: #1a1a2e;
+      width: 100%; max-width: 580px;
+      background: #fff; border-radius: 18px;
+      padding: 26px; color: #1a1a2e;
+      display: none;
     }
-
-    .step-number {
-      display: inline-block;
-      background: #4361ee;
-      color: #fff;
-      font-size: 0.7em;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 10px;
-      margin-bottom: 14px;
-      letter-spacing: 0.5px;
+    .step-badge {
+      display: inline-block; padding: 3px 12px;
+      border-radius: 10px; font-size: 0.68em; font-weight: 700;
+      letter-spacing: 0.5px; margin-bottom: 12px;
     }
+    .badge-filtro { background: #fff8e6; color: #d48806; }
+    .badge-pitch  { background: #e8edff; color: #4361ee; }
 
-    .step-question { font-size: 1.1em; font-weight: 700; margin-bottom: 6px; color: #1a1a2e; }
-    .step-hint     { font-size: 0.78em; color: #8d99ae; margin-bottom: 20px; line-height: 1.5; }
+    .step-question { font-size: 1.05em; font-weight: 700; margin-bottom: 5px; }
+    .step-hint     { font-size: 0.77em; color: #8d99ae; margin-bottom: 18px; line-height: 1.5; }
 
-    /* Options */
-    .options { display: flex; flex-direction: column; gap: 10px; }
-
+    .options { display: flex; flex-direction: column; gap: 8px; }
     .option {
-      padding: 13px 16px;
-      border: 2px solid #e5e7eb;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 0.9em;
-      font-weight: 500;
-      color: #374151;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      padding: 12px 14px; border: 2px solid #e5e7eb;
+      border-radius: 10px; cursor: pointer; font-size: 0.87em;
+      font-weight: 500; color: #374151;
+      transition: all 0.15s; display: flex; align-items: center; gap: 10px;
     }
     .option:hover   { border-color: #4361ee; color: #4361ee; background: #f8f9ff; }
     .option.selected { border-color: #4361ee; background: #4361ee; color: #fff; }
-    .option .opt-icon { font-size: 1.1em; flex-shrink: 0; }
+    .opt-icon { font-size: 1.1em; flex-shrink: 0; }
 
-    /* Notas */
-    .notas-wrap { margin-top: 16px; }
-    .notas-wrap label { font-size: 0.78em; font-weight: 600; color: #6b7280; display: block; margin-bottom: 5px; }
-    .notas-wrap textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1.5px solid #e5e7eb;
-      border-radius: 10px;
-      font-family: inherit;
-      font-size: 0.85em;
-      resize: none;
-      outline: none;
+    /* Text inputs dentro del step */
+    .input-group { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .input-group label { font-size: 0.76em; font-weight: 600; color: #6b7280; }
+    .input-group input, .input-group textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid #e5e7eb; border-radius: 8px;
+      font-family: inherit; font-size: 0.85em; outline: none;
     }
-    .notas-wrap textarea:focus { border-color: #4361ee; }
+    .input-group input:focus, .input-group textarea:focus { border-color: #4361ee; }
 
-    /* Navigation */
-    .step-nav {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 22px;
-      gap: 10px;
-    }
-    .nav-btn {
-      padding: 11px 22px;
-      border-radius: 12px;
-      font-family: inherit;
-      font-size: 0.9em;
-      font-weight: 700;
-      cursor: pointer;
-      border: none;
-      transition: all 0.15s;
-    }
+    /* Nav */
+    .step-nav { display: flex; justify-content: space-between; margin-top: 18px; gap: 10px; }
+    .nav-btn { padding: 10px 20px; border-radius: 10px; font-family: inherit; font-size: 0.88em; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s; }
     .nav-prev { background: #f0f2f5; color: #374151; }
     .nav-prev:hover { background: #e5e7eb; }
     .nav-next { background: #4361ee; color: #fff; flex: 1; }
-    .nav-next:hover { background: #3451d1; }
-    .nav-next:disabled { opacity: 0.5; cursor: not-allowed; }
+    .nav-next.orange { background: #f4a422; }
+    .nav-next:disabled { opacity: 0.4; cursor: not-allowed; }
     .nav-save { background: #28a745; color: #fff; flex: 1; }
-    .nav-save:hover { background: #218838; }
 
-    /* ── SKIP ── */
+    /* Skip */
     .skip-row {
-      width: 100%;
-      max-width: 560px;
-      display: flex;
-      gap: 12px;
-      margin-top: 12px;
+      width: 100%; max-width: 580px;
+      display: none; gap: 10px; margin-top: 10px;
     }
     .skip-btn {
-      flex: 1;
-      padding: 10px;
-      border-radius: 10px;
-      font-family: inherit;
-      font-size: 0.8em;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.65);
-      transition: all 0.15s;
-      text-align: center;
+      flex: 1; padding: 9px; border-radius: 8px; font-family: inherit;
+      font-size: 0.78em; font-weight: 600; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.6); text-align: center;
     }
-    .skip-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .skip-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-    /* ── DONE ── */
+    /* Done */
     .done-card {
-      width: 100%;
-      max-width: 560px;
-      background: #fff;
-      border-radius: 20px;
-      padding: 40px;
-      text-align: center;
-      color: #1a1a2e;
-      display: none;
+      width: 100%; max-width: 580px;
+      background: #fff; border-radius: 18px;
+      padding: 36px; text-align: center; color: #1a1a2e; display: none;
     }
-    .done-icon { font-size: 3em; margin-bottom: 14px; }
-    .done-title { font-size: 1.4em; font-weight: 700; margin-bottom: 8px; }
-    .done-sub   { color: #6b7280; font-size: 0.9em; margin-bottom: 24px; }
-    .done-btn   { display: inline-block; background: #4361ee; color: #fff; padding: 12px 28px; border-radius: 12px; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; font-family: inherit; }
-    .done-btn:hover { background: #3451d1; }
+    .done-icon  { font-size: 2.8em; margin-bottom: 12px; }
+    .done-title { font-size: 1.3em; font-weight: 700; margin-bottom: 6px; }
+    .done-sub   { color: #6b7280; font-size: 0.85em; margin-bottom: 22px; line-height: 1.5; }
+    .done-btn   {
+      display: inline-block; background: #4361ee; color: #fff;
+      padding: 11px 26px; border-radius: 10px; font-weight: 700;
+      font-size: 0.88em; cursor: pointer; border: none; font-family: inherit;
+    }
+    .done-btn.orange { background: #f4a422; }
 
-    /* ── CARGANDO ── */
-    #cargando { text-align: center; padding: 40px; color: rgba(255,255,255,0.6); }
+    #cargando { text-align: center; padding: 50px; color: rgba(255,255,255,0.5); }
+    #sin-prospectos { display: none; text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.5); }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <div class="brand">Supratech · Formulario de Llamada</div>
+    <div class="brand">Supratech · Llamadas</div>
     <a href="/">← Panel</a>
+  </div>
+
+  <!-- Selector de etapa -->
+  <div class="etapa-selector" id="etapa-selector">
+    <button class="etapa-btn active-filtro" onclick="setEtapa('Filtro', this)">
+      <span class="eb-icon">🔍</span>
+      Etapa 1 · Filtro
+      <span class="eb-label">Obtener contacto del gerente</span>
+    </button>
+    <button class="etapa-btn" onclick="setEtapa('Pitch', this)">
+      <span class="eb-icon">🎯</span>
+      Etapa 2 · Pitch
+      <span class="eb-label">Hablar con el decisor</span>
+    </button>
   </div>
 
   <div id="cargando">Cargando prospecto...</div>
 
-  <!-- Contact info -->
-  <div class="contact-card" id="contact-card" style="display:none">
-    <div class="contact-info">
-      <div class="c-empresa" id="c-empresa">—</div>
-      <div class="c-meta"    id="c-meta">—</div>
+  <!-- Contact card -->
+  <div class="contact-card" id="contact-card">
+    <div class="c-top">
+      <div>
+        <div class="c-empresa" id="c-empresa">—</div>
+        <div class="c-meta"    id="c-meta">—</div>
+      </div>
     </div>
-    <div class="contact-actions">
-      <a href="#" id="btn-tel" class="c-btn c-btn-call">📞 Llamar</a>
-      <a href="#" id="btn-wa"  class="c-btn c-btn-wa"  target="_blank">💬 WhatsApp</a>
-    </div>
+    <div class="c-actions" id="c-actions"></div>
+    <div class="c-gerente" id="c-gerente" style="display:none"></div>
   </div>
 
   <!-- Progress -->
-  <div class="progress-wrap" id="progress-wrap" style="display:none">
+  <div class="progress-wrap" id="progress-wrap">
     <div class="progress-steps" id="progress-steps"></div>
-    <div class="progress-label" id="progress-label">Paso 1 de 7</div>
+    <div class="progress-label" id="progress-label"></div>
   </div>
 
-  <!-- Step card -->
-  <div class="step-card" id="step-card" style="display:none"></div>
+  <!-- Step -->
+  <div class="step-card" id="step-card"></div>
 
-  <!-- Skip row -->
-  <div class="skip-row" id="skip-row" style="display:none">
-    <button class="skip-btn" onclick="skipProspecto()">⏭ Saltar este prospecto</button>
-    <button class="skip-btn" onclick="location.reload()">↺ Reiniciar</button>
+  <!-- Skip -->
+  <div class="skip-row" id="skip-row">
+    <button class="skip-btn" onclick="skipProspecto()">⏭ Saltar</button>
+    <button class="skip-btn" onclick="reiniciar()">↺ Reiniciar</button>
   </div>
 
   <!-- Done -->
   <div class="done-card" id="done-card">
-    <div class="done-icon">🎉</div>
-    <div class="done-title">¡Llamada registrada!</div>
-    <div class="done-sub" id="done-msg">Los datos quedaron guardados.</div>
-    <button class="done-btn" onclick="nextCall()">Siguiente prospecto →</button>
+    <div class="done-icon" id="done-icon">✅</div>
+    <div class="done-title" id="done-title">¡Registrado!</div>
+    <div class="done-sub"   id="done-sub"></div>
+    <button class="done-btn" id="done-btn" onclick="nextCall()">Siguiente →</button>
   </div>
 
-  <!-- Sin prospectos -->
-  <div id="sin-prospectos" style="display:none;text-align:center;padding:60px 20px;color:rgba(255,255,255,0.6)">
-    <div style="font-size:2.5em;margin-bottom:14px">✅</div>
-    <div style="font-size:1em;font-weight:600">Sin prospectos pendientes</div>
-    <div style="font-size:0.82em;margin-top:6px">Todos los contactos ya fueron llamados.</div>
-    <a href="/" style="display:inline-block;margin-top:20px;background:#4361ee;color:#fff;padding:10px 24px;border-radius:10px;font-weight:600;font-size:0.85em;text-decoration:none">← Volver al panel</a>
+  <div id="sin-prospectos">
+    <div style="font-size:2.5em;margin-bottom:12px">✅</div>
+    <div style="font-weight:600">Sin prospectos pendientes en esta etapa</div>
+    <a href="/" style="display:inline-block;margin-top:18px;background:#4361ee;color:#fff;padding:9px 22px;border-radius:8px;font-weight:600;font-size:0.84em;text-decoration:none">← Panel</a>
   </div>
 
 <script>
-// ─── SCRIPT DE LLAMADA ─────────────────────────────────────────
-const PASOS = [
+// ─── PASOS POR ETAPA ─────────────────────────────────────────────────────
+
+const PASOS_FILTRO = [
   {
     id: 'respondio',
-    pregunta: '¿Cómo resultó la llamada?',
-    hint: 'Registra qué pasó al marcar el número.',
+    pregunta: '¿Respondió el negocio?',
+    hint: 'Registra el resultado inmediato de la llamada.',
     opciones: [
-      { emoji: '✅', label: 'Respondió' },
+      { emoji: '✅', label: 'Sí, respondió alguien' },
       { emoji: '📵', label: 'Buzón de voz' },
       { emoji: '🚫', label: 'Teléfono incorrecto' },
-      { emoji: '🔄', label: 'No disponible ahora' },
+      { emoji: '🔄', label: 'Ocupado / No disponible ahora' },
     ]
   },
   {
-    id: 'tipo_negocio',
-    pregunta: '¿Es un negocio independiente o parte de una cadena?',
-    hint: 'Trabajamos con negocios independientes. Cadenas (Oxxo, Farmacias GDL, Coppel, etc.) tienen sistemas corporativos propios — no son nuestro cliente.',
+    id: 'quien_atendio',
+    pregunta: '¿Quién atendió la llamada?',
+    hint: 'Identifica con quién estás hablando antes de pedir al gerente.',
     opciones: [
-      { emoji: '✅', label: 'Negocio independiente' },
-      { emoji: '🏢', label: 'Franquicia o cadena regional' },
-      { emoji: '❌', label: 'Cadena nacional (Oxxo, Chedraui, etc.)' },
+      { emoji: '🏆', label: 'El dueño / gerente directamente' },
+      { emoji: '🛒', label: 'Vendedor / asesor de ventas' },
+      { emoji: '📦', label: 'Encargado de pedidos / mostrador' },
+      { emoji: '📞', label: 'Recepcionista / secretaria' },
+      { emoji: '❓', label: 'No identificado' },
     ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora']
+    skipSi: ['Buzón de voz','Teléfono incorrecto','Ocupado / No disponible ahora']
   },
   {
-    id: 'skus',
-    pregunta: '¿Cuántos productos / SKUs manejan aproximadamente?',
-    hint: 'Este es el calificador clave. Con +300 SKUs el sistema les genera valor inmediato.',
+    id: 'pasaron_gerente',
+    pregunta: '¿Te pasaron con el gerente o dueño?',
+    hint: '"¿Sería posible hablar un momento con el encargado o dueño del negocio?"',
     opciones: [
-      { emoji: '📦', label: 'Menos de 100 productos' },
-      { emoji: '📦', label: '100 a 300 productos' },
-      { emoji: '🏆', label: 'Más de 300 productos' },
-      { emoji: '❓', label: 'No sabe / no quiso decir' },
+      { emoji: '✅', label: 'Sí, me pasaron' },
+      { emoji: '⏰', label: 'No está, vuelven a llamar' },
+      { emoji: '🛡', label: 'Bloqueó — no quiso pasar' },
+      { emoji: '📋', label: 'Me pidieron dejar mensaje / datos' },
     ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
-             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
+    skipSi: ['Buzón de voz','Teléfono incorrecto','Ocupado / No disponible ahora',
+             'El dueño / gerente directamente']
   },
   {
-    id: 'sistema_actual',
-    pregunta: '¿Cómo manejan sus pedidos actualmente?',
-    hint: 'Con más de 300 productos en Excel o WhatsApp, el caos es inevitable.',
+    id: 'contacto_obtenido',
+    pregunta: '¿Obtuviste datos de contacto del gerente?',
+    hint: 'Anota el nombre y cualquier dato de contacto que te dieron.',
+    tipo: 'contacto',
     opciones: [
-      { emoji: '📊', label: 'Excel / hojas de cálculo' },
-      { emoji: '📱', label: 'WhatsApp / llamadas' },
-      { emoji: '💻', label: 'Con un sistema (ERP/otro)' },
-      { emoji: '📝', label: 'Sin sistema, todo manual' },
+      { emoji: '📱', label: 'Sí, número directo' },
+      { emoji: '📧', label: 'Sí, correo electrónico' },
+      { emoji: '👤', label: 'Solo el nombre, sin contacto' },
+      { emoji: '❌', label: 'No fue posible obtener nada' },
     ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
-             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
-  },
-  {
-    id: 'pedidos_mes',
-    pregunta: '¿Cuántos pedidos manejan al mes aproximadamente?',
-    hint: 'Esto nos ayuda a calcular el ROI exacto. Un número aproximado está bien.',
-    opciones: [
-      { emoji: '📦', label: 'Menos de 50 pedidos' },
-      { emoji: '📦', label: '50 a 200 pedidos' },
-      { emoji: '📦', label: 'Más de 200 pedidos' },
-      { emoji: '❓', label: 'No sabe / no quiso decir' },
-    ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
-             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
-  },
-  {
-    id: 'empleados',
-    pregunta: '¿Cuántas personas trabajan en la empresa?',
-    hint: 'Solo para dimensionar la operación.',
-    opciones: [
-      { emoji: '👥', label: '1 a 5 personas' },
-      { emoji: '👥', label: '5 a 20 personas' },
-      { emoji: '👥', label: '20 a 50 personas' },
-      { emoji: '🏢', label: 'Más de 50 personas' },
-    ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
-             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
-  },
-  {
-    id: 'decisor',
-    pregunta: '¿La persona que habló toma las decisiones de tecnología / compra?',
-    hint: 'Si no es el decisor, obtén el nombre de la persona correcta.',
-    opciones: [
-      { emoji: '✅', label: 'Sí, yo decido' },
-      { emoji: '🤔', label: 'Necesito consultarlo con alguien' },
-      { emoji: '↗️', label: 'No, la persona es otra' },
-    ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
-             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
-  },
-  {
-    id: 'interes_demo',
-    pregunta: '¿Le interesaría una demo gratuita de 15 minutos?',
-    hint: '"Le muestro exactamente cómo Supratech funciona con negocios como el suyo — sin compromiso."',
-    opciones: [
-      { emoji: '🙌', label: 'Sí, me interesa mucho' },
-      { emoji: '🤷', label: 'Quizás, mándame más información' },
-      { emoji: '🙅', label: 'No por el momento' },
-    ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora',
-             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
-  },
-  {
-    id: 'agendo_demo',
-    pregunta: '¿Agendamos la demo esta semana?',
-    hint: 'Propón horarios concretos: "¿Te queda bien el martes a las 10am o el miércoles a las 4pm?"',
-    opciones: [
-      { emoji: '📅', label: 'Sí, esta semana' },
-      { emoji: '📅', label: 'La próxima semana' },
-      { emoji: '📞', label: 'Prefiero que me llamen después' },
-      { emoji: '❌', label: 'No le interesa' },
-    ],
-    skipSi: ['Buzón de voz','Teléfono incorrecto','No disponible ahora','No por el momento',
-             'Franquicia o cadena regional','Cadena nacional (Oxxo, Chedraui, etc.)']
+    skipSi: ['Buzón de voz','Teléfono incorrecto','Ocupado / No disponible ahora',
+             'Bloqueó — no quiso pasar']
   },
   {
     id: 'conclusion',
     pregunta: '¿Cuál es la conclusión de esta llamada?',
-    hint: 'Selecciona el resultado final para clasificar al prospecto.',
+    hint: 'Clasifica el resultado para priorizar el seguimiento.',
     opciones: [
-      { emoji: '🎯', label: 'Demo agendada' },
-      { emoji: '⭐', label: 'Interesado - dar seguimiento' },
-      { emoji: '💬', label: 'Enviar info por WhatsApp' },
-      { emoji: '❌', label: 'No interesa' },
-      { emoji: '🏢', label: 'No califica - Cadena/Franquicia' },
+      { emoji: '🎯', label: 'Contacto obtenido — llamar al gerente' },
+      { emoji: '📅', label: 'Acordé llamar al gerente [anotar fecha en notas]' },
+      { emoji: '🔄', label: 'Llamar en otro momento' },
+      { emoji: '🏢', label: 'No califica — Cadena/Franquicia' },
       { emoji: '📵', label: 'Buzón de voz' },
       { emoji: '🚫', label: 'Teléfono incorrecto' },
     ]
   }
 ];
 
-let currentProspecto = null;
-let skipCount        = 0;
-let currentStep      = 0;
-let respuestas       = {};
+const PASOS_PITCH = [
+  {
+    id: 'respondio',
+    pregunta: '¿Respondió el gerente / dueño?',
+    hint: 'Esta es la llamada directa al decisor.',
+    opciones: [
+      { emoji: '✅', label: 'Sí, respondió' },
+      { emoji: '📵', label: 'Buzón de voz' },
+      { emoji: '🔄', label: 'No disponible ahora' },
+      { emoji: '🚫', label: 'Número incorrecto / ya no es' },
+    ]
+  },
+  {
+    id: 'tipo_negocio',
+    pregunta: '¿Confirmaste que es un negocio independiente?',
+    hint: 'Descarta cadenas antes de continuar el pitch.',
+    opciones: [
+      { emoji: '✅', label: 'Sí, negocio independiente' },
+      { emoji: '🏢', label: 'Es franquicia o cadena — no califica' },
+    ],
+    skipSi: ['Buzón de voz','No disponible ahora','Número incorrecto / ya no es']
+  },
+  {
+    id: 'skus',
+    pregunta: '¿Cuántos productos / SKUs manejan?',
+    hint: 'Calificador clave. Con +300 SKUs el ROI es inmediato.',
+    opciones: [
+      { emoji: '📦', label: 'Menos de 100 productos' },
+      { emoji: '📦', label: '100 a 300 productos' },
+      { emoji: '🏆', label: 'Más de 300 productos' },
+      { emoji: '❓', label: 'No sabe / no quiso decir' },
+    ],
+    skipSi: ['Buzón de voz','No disponible ahora','Número incorrecto / ya no es',
+             'Es franquicia o cadena — no califica']
+  },
+  {
+    id: 'sistema_actual',
+    pregunta: '¿Cómo manejan sus pedidos actualmente?',
+    hint: 'Con +300 SKUs en Excel o WhatsApp, el caos es inevitable.',
+    opciones: [
+      { emoji: '📊', label: 'Excel / hojas de cálculo' },
+      { emoji: '📱', label: 'WhatsApp / llamadas' },
+      { emoji: '💻', label: 'Con un sistema (ERP/otro)' },
+      { emoji: '📝', label: 'Sin sistema, todo manual' },
+    ],
+    skipSi: ['Buzón de voz','No disponible ahora','Número incorrecto / ya no es',
+             'Es franquicia o cadena — no califica']
+  },
+  {
+    id: 'interes_demo',
+    pregunta: '¿Le interesaría una demo gratuita de 15 minutos?',
+    hint: '"Le muestro cómo funciona con negocios como el suyo — sin compromiso, sin costo."',
+    opciones: [
+      { emoji: '🙌', label: 'Sí, me interesa' },
+      { emoji: '🤷', label: 'Quizás, mándame información' },
+      { emoji: '🙅', label: 'No por el momento' },
+    ],
+    skipSi: ['Buzón de voz','No disponible ahora','Número incorrecto / ya no es',
+             'Es franquicia o cadena — no califica']
+  },
+  {
+    id: 'agendo_demo',
+    pregunta: '¿Agendamos la demo esta semana?',
+    hint: '"¿Te va bien el martes a las 10am o el miércoles a las 4pm?"',
+    opciones: [
+      { emoji: '📅', label: 'Sí, esta semana' },
+      { emoji: '📅', label: 'La próxima semana' },
+      { emoji: '📞', label: 'Me llaman después' },
+      { emoji: '❌', label: 'No le interesa' },
+    ],
+    skipSi: ['Buzón de voz','No disponible ahora','Número incorrecto / ya no es',
+             'Es franquicia o cadena — no califica','No por el momento']
+  },
+  {
+    id: 'conclusion',
+    pregunta: '¿Cuál es la conclusión?',
+    hint: 'Resultado final de la llamada de pitch.',
+    opciones: [
+      { emoji: '🎯', label: 'Demo agendada' },
+      { emoji: '⭐', label: 'Interesado — dar seguimiento' },
+      { emoji: '💬', label: 'Enviar info por WhatsApp' },
+      { emoji: '❌', label: 'No interesa' },
+      { emoji: '🏢', label: 'No califica — Cadena/Franquicia' },
+      { emoji: '📵', label: 'Buzón de voz' },
+    ]
+  }
+];
 
-// ─── LOAD ────────────────────────────────────────
-async function loadProspecto(skip = 0) {
+// ─── STATE ───────────────────────────────────────────────────────────────
+let etapaActual    = 'Filtro';
+let PASOS          = PASOS_FILTRO;
+let currentProsp   = null;
+let skipCount      = 0;
+let currentStep    = 0;
+let respuestas     = {};
+
+// ─── ETAPA SELECTOR ──────────────────────────────────────────────────────
+function setEtapa(etapa, btn) {
+  etapaActual = etapa;
+  PASOS = etapa === 'Filtro' ? PASOS_FILTRO : PASOS_PITCH;
+  document.querySelectorAll('.etapa-btn').forEach(b => {
+    b.className = 'etapa-btn';
+  });
+  btn.className = `etapa-btn active-${etapa.toLowerCase()}`;
+  ocultarTodo();
+  skipCount = 0;
+  loadProspecto(0);
+}
+
+// ─── LOAD ─────────────────────────────────────────────────────────────────
+async function loadProspecto(skip) {
+  ocultarTodo();
   document.getElementById('cargando').style.display = 'block';
-  document.getElementById('contact-card').style.display = 'none';
-  document.getElementById('step-card').style.display    = 'none';
-  document.getElementById('progress-wrap').style.display = 'none';
-  document.getElementById('skip-row').style.display     = 'none';
-  document.getElementById('done-card').style.display    = 'none';
-  document.getElementById('sin-prospectos').style.display = 'none';
 
-  const res = await fetch(`/api/formulario/siguiente?skip=${skip}`);
+  const res = await fetch(`/api/formulario/siguiente?skip=${skip}&etapa=${etapaActual}`);
   const d   = await res.json();
   document.getElementById('cargando').style.display = 'none';
 
@@ -426,74 +434,106 @@ async function loadProspecto(skip = 0) {
     return;
   }
 
-  currentProspecto = d.prospecto;
-  currentStep      = 0;
-  respuestas       = {};
-  skipCount        = skip;
+  currentProsp = d.prospecto;
+  currentStep  = 0;
+  respuestas   = {};
 
-  // Contact card
-  const p  = currentProspecto;
-  const tel = (p['Teléfono']||'').replace(/\D/g,'');
-  const wa  = (p['WhatsApp']||p['Teléfono']||'').replace(/\D/g,'');
-  const waMsg = encodeURIComponent(`Hola ${p['Nombre']||''}, te contacto de Supratech — el software de operaciones para distribuidoras mexicanas. ¿Tienes unos minutos?`);
+  renderContactCard();
+  buildProgress();
+  renderStep();
 
-  document.getElementById('c-empresa').textContent = p['Empresa'] || p['Nombre'] || '—';
-  document.getElementById('c-meta').textContent    = [p['Giro'], p['Ciudad'], p['Empleados'] ? p['Empleados']+' emp.' : ''].filter(Boolean).join(' · ');
-  document.getElementById('btn-tel').href = tel ? `tel:${tel}` : '#';
-  document.getElementById('btn-wa').href  = wa  ? `https://wa.me/52${wa}?text=${waMsg}` : '#';
-
-  document.getElementById('contact-card').style.display  = 'flex';
+  document.getElementById('contact-card').classList.add('show');
   document.getElementById('progress-wrap').style.display = 'block';
   document.getElementById('step-card').style.display     = 'block';
   document.getElementById('skip-row').style.display      = 'flex';
-
-  buildProgress();
-  renderStep();
 }
 
-// ─── PROGRESS ────────────────────────────────────
+function renderContactCard() {
+  const p   = currentProsp;
+  const tel  = (p['Tel Directo'] || p['Teléfono'] || '').replace(/\D/g,'');
+  const wa   = (p['WhatsApp'] || p['Tel Directo'] || p['Teléfono'] || '').replace(/\D/g,'');
+  const waMsg = encodeURIComponent(`Hola ${p['Nombre Gerente']||p['Nombre']||''}, te contacto de Supratech.`);
+
+  document.getElementById('c-empresa').textContent = p['Empresa'] || p['Nombre'] || '—';
+  document.getElementById('c-meta').textContent    =
+    [p['Giro'], p['Ciudad'], p['Reseñas'] ? p['Reseñas']+' reseñas' : ''].filter(Boolean).join(' · ');
+
+  const actions = document.getElementById('c-actions');
+  actions.innerHTML = `
+    ${tel ? `<a href="tel:${tel}" class="c-btn c-btn-call">📞 Llamar</a>` : ''}
+    ${wa  ? `<a href="https://wa.me/52${wa}?text=${waMsg}" target="_blank" class="c-btn c-btn-wa">💬 WA</a>` : ''}
+    ${p['Maps Link'] ? `<a href="${p['Maps Link']}" target="_blank" class="c-btn c-btn-dir">🗺 Maps</a>` : ''}
+  `;
+
+  const gerEl = document.getElementById('c-gerente');
+  if (etapaActual === 'Pitch' && (p['Nombre Gerente'] || p['Tel Directo'] || p['Correo Gerente'])) {
+    gerEl.style.display = 'block';
+    gerEl.textContent   = `👤 ${p['Nombre Gerente']||'Gerente'} · ${p['Tel Directo']||''} ${p['Correo Gerente']||''}`.trim();
+  } else {
+    gerEl.style.display = 'none';
+  }
+}
+
+// ─── PROGRESS ────────────────────────────────────────────────────────────
 function buildProgress() {
-  const steps = document.getElementById('progress-steps');
-  steps.innerHTML = PASOS.map((_, i) => `<div class="step-dot ${i === 0 ? 'active' : ''}" id="dot-${i}"></div>`).join('');
+  document.getElementById('progress-steps').innerHTML =
+    PASOS.map((_,i) => `<div class="step-dot ${i===0?'active':''}" id="dot-${i}"></div>`).join('');
+  updateProgress();
 }
 
 function updateProgress() {
-  PASOS.forEach((_, i) => {
-    const dot = document.getElementById('dot-' + i);
-    if (!dot) return;
-    dot.className = 'step-dot ' + (i < currentStep ? 'done' : i === currentStep ? 'active' : '');
+  PASOS.forEach((_,i) => {
+    const d = document.getElementById('dot-'+i);
+    if (d) d.className = 'step-dot ' + (i < currentStep ? 'done' : i === currentStep ? 'active' : '');
   });
-  document.getElementById('progress-label').textContent = `Paso ${currentStep + 1} de ${PASOS.length}`;
+  document.getElementById('progress-label').textContent =
+    `Paso ${currentStep+1} de ${PASOS.length} · Etapa ${etapaActual}`;
 }
 
-// ─── RENDER STEP ─────────────────────────────────
+// ─── RENDER STEP ─────────────────────────────────────────────────────────
 function renderStep() {
-  const paso = PASOS[currentStep];
-  const card = document.getElementById('step-card');
+  const paso     = PASOS[currentStep];
   const selected = respuestas[paso.id] || '';
+  const isLast   = currentStep === PASOS.length - 1;
+  const badgeCls = etapaActual === 'Filtro' ? 'badge-filtro' : 'badge-pitch';
+  const badgeTxt = etapaActual === 'Filtro' ? '🔍 ETAPA 1 — FILTRO' : '🎯 ETAPA 2 — PITCH';
 
-  const opciones = paso.opciones.map(o => `
-    <div class="option ${selected === o.label ? 'selected' : ''}" onclick="selectOption(this, '${esc(o.label)}')">
-      <span class="opt-icon">${o.emoji}</span> ${o.label}
-    </div>
-  `).join('');
+  let extraHTML = '';
 
-  const isLast = currentStep === PASOS.length - 1;
+  // Campos de texto para contacto (paso contacto_obtenido en Filtro)
+  if (paso.id === 'contacto_obtenido') {
+    extraHTML = `<div class="input-group" id="campos-contacto" style="margin-top:14px">
+      <label>Nombre del gerente / dueño</label>
+      <input type="text" id="inp-nombre-gerente" placeholder="Ej: Carlos Martínez" value="${respuestas.nombre_gerente||''}">
+      <label>Teléfono directo</label>
+      <input type="tel" id="inp-tel-directo" placeholder="33 1234 5678" value="${respuestas.tel_directo||''}">
+      <label>Correo electrónico</label>
+      <input type="email" id="inp-correo" placeholder="gerente@empresa.com" value="${respuestas.correo_gerente||''}">
+    </div>`;
+  }
 
-  card.innerHTML = `
-    <div class="step-number">PASO ${currentStep + 1} DE ${PASOS.length}</div>
+  const isLastNota = isLast;
+
+  document.getElementById('step-card').innerHTML = `
+    <div class="step-badge ${badgeCls}">${badgeTxt} · PASO ${currentStep+1}/${PASOS.length}</div>
     <div class="step-question">${paso.pregunta}</div>
     <div class="step-hint">${paso.hint}</div>
-    <div class="options">${opciones}</div>
-    <div class="notas-wrap" id="notas-wrap" style="display:${isLast?'block':'none'}">
-      <label>Notas adicionales (opcional)</label>
-      <textarea id="campo-notas" rows="2" placeholder="Nombre del decisor, fecha de demo, observaciones...">${respuestas.notas||''}</textarea>
+    <div class="options">
+      ${paso.opciones.map(o => `
+        <div class="option ${selected === o.label ? 'selected' : ''}" onclick="selectOption(this,'${esc(o.label)}')">
+          <span class="opt-icon">${o.emoji}</span> ${o.label}
+        </div>`).join('')}
     </div>
+    ${extraHTML}
+    ${isLastNota ? `<div class="input-group" style="margin-top:14px">
+      <label>Notas adicionales</label>
+      <textarea id="campo-notas" rows="2" placeholder="Fecha acordada, nombre mencionado, observaciones...">${respuestas.notas||''}</textarea>
+    </div>` : ''}
     <div class="step-nav">
       ${currentStep > 0 ? `<button class="nav-btn nav-prev" onclick="prevStep()">← Atrás</button>` : '<div></div>'}
       ${isLast
         ? `<button class="nav-btn nav-save" onclick="guardarLlamada()">✓ Guardar llamada</button>`
-        : `<button class="nav-btn nav-next" id="btn-next" onclick="nextStep()" ${selected ? '' : 'disabled'}>Siguiente →</button>`
+        : `<button class="nav-btn nav-next ${etapaActual==='Filtro'?'orange':''}" id="btn-next" onclick="nextStep()" ${selected?'':'disabled'}>Siguiente →</button>`
       }
     </div>
   `;
@@ -509,13 +549,27 @@ function selectOption(el, label) {
 
 function nextStep() {
   const paso = PASOS[currentStep];
-  if (!respuestas[paso.id]) { alert('Selecciona una opción para continuar.'); return; }
+
+  // Guardar campos de texto si existen
+  if (paso.id === 'contacto_obtenido') {
+    respuestas.nombre_gerente = document.getElementById('inp-nombre-gerente')?.value.trim() || '';
+    respuestas.tel_directo    = document.getElementById('inp-tel-directo')?.value.trim()    || '';
+    respuestas.correo_gerente = document.getElementById('inp-correo')?.value.trim()         || '';
+  }
+
+  if (!respuestas[paso.id]) { alert('Selecciona una opción.'); return; }
 
   // Auto-skip pasos no aplicables
   let next = currentStep + 1;
   while (next < PASOS.length - 1) {
     const sig = PASOS[next];
-    if (sig.skipSi && sig.skipSi.includes(respuestas['respondio']) || sig.skipSi?.includes(respuestas['interes_demo'])) {
+    if (sig.skipSi && (
+      sig.skipSi.includes(respuestas['respondio']) ||
+      sig.skipSi.includes(respuestas['quien_atendio']) ||
+      sig.skipSi.includes(respuestas['pasaron_gerente']) ||
+      sig.skipSi.includes(respuestas['tipo_negocio']) ||
+      sig.skipSi.includes(respuestas['interes_demo'])
+    )) {
       next++;
     } else break;
   }
@@ -530,47 +584,56 @@ function prevStep() {
   renderStep();
 }
 
-// ─── GUARDAR ─────────────────────────────────────
+// ─── GUARDAR ─────────────────────────────────────────────────────────────
 async function guardarLlamada() {
-  if (!respuestas['conclusion']) { alert('Selecciona la conclusión de la llamada.'); return; }
+  if (!respuestas['conclusion']) { alert('Selecciona la conclusión.'); return; }
+
   const notaEl = document.getElementById('campo-notas');
   respuestas.notas = notaEl ? notaEl.value.trim() : '';
 
   const body = {
-    _row:         currentProspecto._row,
-    empresa:      currentProspecto['Empresa'] || currentProspecto['Nombre'],
-    ciudad:       currentProspecto['Ciudad']  || '',
-    respondio:    respuestas.respondio     || '',
-    skus:         respuestas.skus          || '',
-    sistema_actual: respuestas.sistema_actual || '',
-    pedidos_mes:  respuestas.pedidos_mes   || '',
-    empleados:    respuestas.empleados     || '',
-    decisor:      respuestas.decisor      || '',
-    interes_demo: respuestas.interes_demo || '',
-    agendo_demo:  respuestas.agendo_demo  || '',
-    conclusion:   respuestas.conclusion,
-    notas:        respuestas.notas,
+    _row:             currentProsp._row,
+    etapa:            etapaActual,
+    empresa:          currentProsp['Empresa'] || currentProsp['Nombre'],
+    ciudad:           currentProsp['Ciudad'] || '',
+    respondio:        respuestas.respondio       || '',
+    quien_atendio:    respuestas.quien_atendio   || '',
+    pasaron_gerente:  respuestas.pasaron_gerente || '',
+    nombre_gerente:   respuestas.nombre_gerente  || '',
+    tel_directo:      respuestas.tel_directo      || '',
+    correo_gerente:   respuestas.correo_gerente  || '',
+    tipo_negocio:     respuestas.tipo_negocio    || '',
+    skus:             respuestas.skus            || '',
+    sistema_actual:   respuestas.sistema_actual  || '',
+    pedidos_mes:      respuestas.pedidos_mes     || '',
+    empleados:        respuestas.empleados       || '',
+    interes_demo:     respuestas.interes_demo    || '',
+    agendo_demo:      respuestas.agendo_demo     || '',
+    conclusion:       respuestas.conclusion,
+    notas:            respuestas.notas,
   };
 
   const res = await fetch('/api/formulario/guardar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   const d = await res.json();
+  if (d.error) { alert('Error: ' + d.error); return; }
 
-  if (d.error) { alert('Error al guardar: ' + d.error); return; }
+  ocultarTodo();
 
-  document.getElementById('step-card').style.display     = 'none';
-  document.getElementById('contact-card').style.display  = 'none';
-  document.getElementById('progress-wrap').style.display = 'none';
-  document.getElementById('skip-row').style.display      = 'none';
+  const esFiltro    = etapaActual === 'Filtro';
+  const tieneContacto = body.nombre_gerente || body.tel_directo || body.correo_gerente;
+  const esDemo      = respuestas.conclusion === 'Demo agendada';
 
-  const isDemoAgendada = respuestas.conclusion === 'Demo agendada';
-  document.getElementById('done-msg').textContent = isDemoAgendada
-    ? '¡Demo agendada! El prospecto quedó marcado. Sigue con el siguiente.'
-    : `Llamada registrada como: "${respuestas.conclusion}"`;
-
+  document.getElementById('done-icon').textContent  = esDemo ? '🎯' : tieneContacto ? '📋' : '✅';
+  document.getElementById('done-title').textContent = esDemo ? '¡Demo agendada!' : tieneContacto ? '¡Contacto obtenido!' : '¡Llamada registrada!';
+  document.getElementById('done-sub').textContent   = esDemo
+    ? 'El prospecto avanzó a cliente potencial. ¡Sigue así!'
+    : tieneContacto
+    ? `Gerente: ${body.nombre_gerente || '—'} · ${body.tel_directo || body.correo_gerente || ''}. Ahora llámalo en Etapa 2.`
+    : `Conclusión: "${respuestas.conclusion}"`;
+  document.getElementById('done-btn').className  = `done-btn ${esDemo || tieneContacto ? '' : ''}`;
   document.getElementById('done-card').style.display = 'block';
 }
 
@@ -582,13 +645,26 @@ function nextCall() {
 
 function skipProspecto() {
   skipCount++;
-  document.getElementById('done-card').style.display = 'none';
   loadProspecto(skipCount);
 }
 
-function esc(s) { return String(s).replace(/'/g, "\\'"); }
+function reiniciar() {
+  skipCount = 0;
+  loadProspecto(0);
+}
 
-// ─── INIT ────────────────────────────────────────
+function ocultarTodo() {
+  ['cargando','sin-prospectos','done-card'].forEach(id =>
+    document.getElementById(id).style.display = 'none');
+  document.getElementById('contact-card').classList.remove('show');
+  document.getElementById('progress-wrap').style.display = 'none';
+  document.getElementById('step-card').style.display     = 'none';
+  document.getElementById('skip-row').style.display      = 'none';
+}
+
+function esc(s) { return String(s).replace(/'/g,"\\'"); }
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
 loadProspecto(0);
 </script>
 </body>
