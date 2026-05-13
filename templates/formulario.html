@@ -588,6 +588,14 @@ function prevStep() {
 async function guardarLlamada() {
   if (!respuestas['conclusion']) { alert('Selecciona la conclusión.'); return; }
 
+  // Bloquear botón inmediatamente para evitar doble guardado
+  const btnGuardar = document.querySelector('.nav-save');
+  if (btnGuardar) {
+    if (btnGuardar.disabled) return;   // ya se está guardando
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = 'Guardando...';
+  }
+
   const notaEl = document.getElementById('campo-notas');
   respuestas.notas = notaEl ? notaEl.value.trim() : '';
 
@@ -618,7 +626,11 @@ async function guardarLlamada() {
     body: JSON.stringify(body)
   });
   const d = await res.json();
-  if (d.error) { alert('Error: ' + d.error); return; }
+  if (d.error) {
+    alert('Error: ' + d.error);
+    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '✓ Guardar llamada'; }
+    return;
+  }
 
   ocultarTodo();
 
