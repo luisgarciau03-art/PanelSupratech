@@ -4,7 +4,7 @@ Estrategia: mailto links → /contacto → /contact → regex en texto visible.
 """
 import re
 import requests
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, unquote
 
 try:
     from bs4 import BeautifulSoup
@@ -93,7 +93,7 @@ def _parse_with_bs4(html: str, base_domain: str) -> str | None:
     for a in soup.find_all('a', href=True):
         href = a['href']
         if href.lower().startswith('mailto:'):
-            email = href[7:].split('?')[0].strip().lower()
+            email = unquote(href[7:].split('?')[0]).strip().lower()
             if _is_valid(email, base_domain):
                 return email
 
@@ -112,10 +112,9 @@ def _parse_with_bs4(html: str, base_domain: str) -> str | None:
 
 def _parse_with_regex(html: str, base_domain: str) -> str | None:
     # mailto links primero
-    mailto_re = re.compile(r'mailto:([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})',
-                           re.IGNORECASE)
+    mailto_re = re.compile(r'mailto:([^"\'\s>]+)', re.IGNORECASE)
     for match in mailto_re.findall(html):
-        email = match.lower()
+        email = unquote(match.split('?')[0]).strip().lower()
         if _is_valid(email, base_domain):
             return email
 
@@ -129,7 +128,7 @@ def _parse_with_regex(html: str, base_domain: str) -> str | None:
 
 
 def _is_valid(email: str, base_domain: str) -> bool:
-    if not email or '@' not in email:
+    if not email or not _EMAIL_RE.fullmatch(email):
         return False
 
     parts = email.split('@')
