@@ -2,25 +2,22 @@ name            = "supratech-correos"
 main            = "index.js"
 compatibility_date = "2025-01-01"
 
-# Binding nativo de Cloudflare Email Service (Email Sending)
-[[send_email]]
-name = "EMAIL"
-
 # ─────────────────────────────────────────────────────────────
 # Variables de entorno — configurar en Cloudflare Dashboard
 # Workers & Pages → supratech-correos → Settings → Variables and Secrets
 #
-# Variable       Descripción
+# Variable        Descripción
 # ─────────────────────────────────────────────────────────────
-# WORKER_SECRET  Clave secreta compartida con Flask (CF_WORKER_SECRET en .env)
-# FROM_EMAIL     Email remitente, ej: ventas@supratech.mx
-# FROM_NAME      Nombre de pantalla, ej: Supratech
+# WORKER_SECRET   Clave secreta compartida con Flask (CF_WORKER_SECRET en .env)
+# RESEND_API_KEY  API key de Resend (https://resend.com/api-keys)
+# FROM_EMAIL      Email remitente, ej: ventas@supratech.work
+# FROM_NAME       Nombre de pantalla, ej: Supratech
 #
-# Antes del primer despliegue, habilita el dominio remitente en
-# Cloudflare Email Service (una sola vez):
-#
-#   wrangler email sending enable supratech.mx
-#   wrangler email sending dns get supratech.mx   (verificar registros SPF/DKIM)
+# Antes del primer despliegue:
+#   1. Crear cuenta en https://resend.com
+#   2. Agregar y verificar el dominio supratech.work (Resend da los registros
+#      DNS — agregarlos en la zona DNS de supratech.work en Cloudflare)
+#   3. Generar una API key
 #
 # Para desplegar:
 #   wrangler login

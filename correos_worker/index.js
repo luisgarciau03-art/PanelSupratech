@@ -1,23 +1,30 @@
 /**
  * Supratech Correos — Cloudflare Worker
  *
- * Envía emails de prospección via Cloudflare Email Service (binding nativo "send_email").
+ * Envía emails de prospección via Resend (https://resend.com).
  *
  * Variables de entorno — configurar en:
  *   Cloudflare Dashboard → Workers & Pages → supratech-correos → Settings → Variables
  *
- *   WORKER_SECRET  Clave para autenticar peticiones desde Flask (obligatoria)
- *   FROM_EMAIL     Remitente, ej: ventas@supratech.mx (el dominio debe estar
- *                  onboardeado en Email Sending, ver wrangler.toml)
- *   FROM_NAME      Nombre remitente, ej: Supratech
+ *   WORKER_SECRET    Clave para autenticar peticiones desde Flask (obligatoria)
+ *   RESEND_API_KEY   API key de Resend (Settings → API Keys)
+ *   FROM_EMAIL       Remitente, ej: ventas@supratech.work (dominio verificado en Resend)
+ *   FROM_NAME        Nombre remitente, ej: Supratech
+ *
+ * Antes del primer despliegue:
+ *   1. Crear cuenta en https://resend.com
+ *   2. Agregar y verificar el dominio supratech.work (Resend da los registros
+ *      DNS — agregarlos en Cloudflare DNS de supratech.work)
+ *   3. Generar una API key
  *
  * Despliegue:
  *   cd correos_worker
  *   npm install -g wrangler
  *   wrangler login
- *   wrangler email sending enable <tu-dominio>   (una sola vez, habilita el dominio remitente)
  *   wrangler deploy
  */
+
+const RESEND_API_URL = 'https://api.resend.com/emails';
 
 export default {
   async fetch(request, env) {
@@ -35,6 +42,10 @@ export default {
       return corsHeaders(json({ error: 'No autorizado' }, 401));
     }
 
+    if (!env.RESEND_API_KEY) {
+      return corsHeaders(json({ error: 'RESEND_API_KEY no configurada' }, 500));
+    }
+
     let body;
     try {
       body = await request.json();
@@ -47,27 +58,37 @@ export default {
       return corsHeaders(json({ error: 'Campos requeridos: to, subject, html' }, 400));
     }
 
-    const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const fromEmail = env.FROM_EMAIL || 'ventas@supratech.work';
+    const fromName  = env.FROM_NAME  || 'Supratech';
+
+    const payload = {
+      from:    `${fromName} <${fromEmail}>`,
+      to:      [to],
+      subject,
+      html,
+    };
+    if (reply_to) {
+      payload.reply_to = reply_to;
+    }
 
     try {
-      const params = {
-        to,
-        from: {
-          email: env.FROM_EMAIL || 'ventas@supratech.mx',
-          name:  env.FROM_NAME  || 'Supratech',
+      const resp = await fetch(RESEND_API_URL, {
+        method:  'POST',
+        headers: {
+          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+          'Content-Type':  'application/json',
         },
-        subject,
-        html,
-        text,
-      };
-      if (reply_to) {
-        params.replyTo = reply_to;
-      }
+        body: JSON.stringify(payload),
+      });
 
-      const response = await env.EMAIL.send(params);
-      return corsHeaders(json({ ok: true, messageId: response.messageId }));
+      const data = await resp.json().catch(() => ({}));
+
+      if (resp.ok) {
+        return corsHeaders(json({ ok: true, id: data.id }));
+      }
+      return corsHeaders(json({ ok: false, error: data.message || `HTTP ${resp.status}` }, 502));
     } catch (err) {
-      return corsHeaders(json({ ok: false, error: `${err.code || ''} ${err.message || err}`.trim() }, 502));
+      return corsHeaders(json({ ok: false, error: err.message }, 502));
     }
   },
 };
