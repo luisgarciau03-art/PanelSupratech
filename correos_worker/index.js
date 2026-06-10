@@ -1,20 +1,21 @@
 /**
  * Supratech Correos — Cloudflare Worker
  *
- * Envía emails de prospección via MailChannels API.
+ * Envía emails de prospección via Cloudflare Email Service (binding nativo "send_email").
  *
  * Variables de entorno — configurar en:
  *   Cloudflare Dashboard → Workers & Pages → supratech-correos → Settings → Variables
  *
- *   WORKER_SECRET        Clave para autenticar peticiones desde Flask (obligatoria)
- *   FROM_EMAIL           Remitente, ej: ventas@supratech.mx
- *   FROM_NAME            Nombre remitente, ej: Supratech
- *   MAILCHANNELS_API_KEY API key de MailChannels (requerida para envío real)
+ *   WORKER_SECRET  Clave para autenticar peticiones desde Flask (obligatoria)
+ *   FROM_EMAIL     Remitente, ej: ventas@supratech.mx (el dominio debe estar
+ *                  onboardeado en Email Sending, ver wrangler.toml)
+ *   FROM_NAME      Nombre remitente, ej: Supratech
  *
  * Despliegue:
  *   cd correos_worker
  *   npm install -g wrangler
  *   wrangler login
+ *   wrangler email sending enable <tu-dominio>   (una sola vez, habilita el dominio remitente)
  *   wrangler deploy
  */
 
@@ -46,42 +47,27 @@ export default {
       return corsHeaders(json({ error: 'Campos requeridos: to, subject, html' }, 400));
     }
 
-    // Construir payload para MailChannels
-    const payload = {
-      personalizations: [{ to: [{ email: to }] }],
-      from: {
-        email: env.FROM_EMAIL || 'ventas@supratech.mx',
-        name:  env.FROM_NAME  || 'Supratech',
-      },
-      subject,
-      content: [{ type: 'text/html', value: html }],
-    };
-
-    if (reply_to) {
-      payload.reply_to = { email: reply_to };
-    }
-
-    const mcHeaders = { 'content-type': 'application/json' };
-    if (env.MAILCHANNELS_API_KEY) {
-      mcHeaders['x-api-key'] = env.MAILCHANNELS_API_KEY;
-    }
+    const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
     try {
-      const mc = await fetch('https://api.mailchannels.net/tx/v1/send', {
-        method:  'POST',
-        headers: mcHeaders,
-        body:    JSON.stringify(payload),
-      });
-
-      let detail = '';
-      try { detail = await mc.text(); } catch {}
-
-      if (mc.status >= 200 && mc.status < 300) {
-        return corsHeaders(json({ ok: true }));
+      const params = {
+        to,
+        from: {
+          email: env.FROM_EMAIL || 'ventas@supratech.mx',
+          name:  env.FROM_NAME  || 'Supratech',
+        },
+        subject,
+        html,
+        text,
+      };
+      if (reply_to) {
+        params.replyTo = reply_to;
       }
-      return corsHeaders(json({ ok: false, status: mc.status, detail: detail.slice(0, 300) }, 502));
+
+      const response = await env.EMAIL.send(params);
+      return corsHeaders(json({ ok: true, messageId: response.messageId }));
     } catch (err) {
-      return corsHeaders(json({ ok: false, error: err.message }, 502));
+      return corsHeaders(json({ ok: false, error: `${err.code || ''} ${err.message || err}`.trim() }, 502));
     }
   },
 };

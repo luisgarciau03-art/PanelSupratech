@@ -1,20 +1,30 @@
 name            = "supratech-correos"
 main            = "index.js"
-compatibility_date = "2024-11-01"
+compatibility_date = "2025-01-01"
 
+# Binding nativo de Cloudflare Email Service (Email Sending)
+[[send_email]]
+name = "EMAIL"
+
+# ─────────────────────────────────────────────────────────────
 # Variables de entorno — configurar en Cloudflare Dashboard
 # Workers & Pages → supratech-correos → Settings → Variables and Secrets
 #
 # Variable       Descripción
 # ─────────────────────────────────────────────────────────────
-# WORKER_SECRET        Clave secreta compartida con Flask (CF_WORKER_SECRET en .env)
-# FROM_EMAIL           Email remitente verificado, ej: ventas@supratech.mx
-# FROM_NAME            Nombre de pantalla, ej: Supratech
-# MAILCHANNELS_API_KEY API key de tu cuenta MailChannels
+# WORKER_SECRET  Clave secreta compartida con Flask (CF_WORKER_SECRET en .env)
+# FROM_EMAIL     Email remitente, ej: ventas@supratech.mx
+# FROM_NAME      Nombre de pantalla, ej: Supratech
+#
+# Antes del primer despliegue, habilita el dominio remitente en
+# Cloudflare Email Service (una sola vez):
+#
+#   wrangler email sending enable supratech.mx
+#   wrangler email sending dns get supratech.mx   (verificar registros SPF/DKIM)
 #
 # Para desplegar:
 #   wrangler login
 #   wrangler deploy
 #
-# URL del worker resultante (agregar a .env como CF_WORKER_URL):
+# URL del worker resultante (agregar a .env / Railway como CF_WORKER_URL):
 #   https://supratech-correos.<tu-subdomain>.workers.dev
