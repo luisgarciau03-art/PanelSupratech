@@ -317,6 +317,20 @@ CATEGORIAS_IMPORTADOR = [
     'Distribuidoras farmacéuticas',
     'Distribuidoras de herramientas',
     'Distribuidoras de equipo de seguridad industrial',
+    'Distribuidoras de material eléctrico',
+    'Distribuidoras de llantas y rines',
+    'Distribuidoras de lubricantes y aceites',
+    'Distribuidoras de pinturas y recubrimientos',
+    'Distribuidoras de telas y textiles al mayoreo',
+    'Distribuidoras de calzado al mayoreo',
+    'Distribuidoras de juguetes y regalos al mayoreo',
+    'Distribuidoras de cosméticos y productos de belleza',
+    'Distribuidoras de alimentos congelados',
+    'Distribuidoras de equipo médico y consumibles hospitalarios',
+    'Distribuidoras de empaques y embalajes',
+    'Distribuidoras de productos agropecuarios',
+    'Distribuidoras de electrónica y cómputo',
+    'Centros de abasto y mayoreo',
 ]
 
 def _relevancia(r):
