@@ -394,6 +394,19 @@
     .empty { text-align: center; padding: 48px; color: #8d99ae; }
     .empty .e-icon { font-size: 2.5em; margin-bottom: 10px; }
 
+    /* ── CORREOS ── */
+    .seg-table { width: 100%; border-collapse: collapse; font-size: 0.83em; }
+    .seg-table th { padding: 8px 12px; text-align: left; font-size: 0.72em; font-weight: 600; color: #8d99ae; text-transform: uppercase; letter-spacing: 0.5px; background: #fafafa; border-bottom: 1px solid #f0f0f0; }
+    .seg-table td { padding: 10px 12px; border-bottom: 1px solid #f8f8f8; vertical-align: middle; color: #374151; }
+    .seg-table tr:last-child td { border-bottom: none; }
+    .seg-table tr:hover td { background: #fafbff; }
+    .temp-badge { display: inline-block; font-size: 0.75em; font-weight: 700; padding: 2px 9px; border-radius: 10px; }
+    .temp-frio     { background: #e8edff; color: #4361ee; }
+    .temp-tibio    { background: #fff8e6; color: #d48806; }
+    .temp-caliente { background: #fce7f3; color: #be185d; }
+    .correos-grid { display: grid; grid-template-columns: 320px 1fr; gap: 16px; margin-bottom: 20px; }
+    @media (max-width: 900px) { .correos-grid { grid-template-columns: 1fr; } }
+
     /* ── PIPELINE SEGUIMIENTO ── */
     .pipeline-cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
     .pipeline-col { background: #f8f9ff; border-radius: 14px; padding: 14px; min-height: 200px; }
@@ -458,6 +471,10 @@
     </div>
     <div class="nav-item" onclick="go('importador')">
       <span class="icon">🗺</span><span>Importador</span>
+    </div>
+    <div class="nav-item" onclick="go('correos')">
+      <span class="icon">✉️</span><span>Correos</span>
+      <span class="nav-badge" id="badge-correos">—</span>
     </div>
   </div>
 
@@ -631,6 +648,58 @@
     </div>
   </div>
 
+  <!-- ─── CORREOS ─── -->
+  <div class="section" id="sec-correos">
+
+    <!-- Stats -->
+    <div class="stats-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="num" style="color:var(--blue)" id="cc-total">—</div><div class="lbl">Con email</div></div>
+      <div class="stat-card"><div class="num" style="color:#f4a422"     id="cc-sin">—</div><div class="lbl">Sin email</div></div>
+      <div class="stat-card"><div class="num" style="color:#28a745"     id="cc-enviados">—</div><div class="lbl">Emails enviados</div></div>
+      <div class="stat-card"><div class="num" style="color:#7c3aed"     id="cc-tasa">—</div><div class="lbl">% cobertura</div></div>
+      <div class="stat-card"><div class="num" style="color:#0ea5e9"     id="cc-aptos">—</div><div class="lbl">Aptos para email</div></div>
+    </div>
+
+    <div class="correos-grid">
+      <!-- Enricher -->
+      <div class="import-card" style="max-width:none">
+        <h3 style="font-size:0.9em;font-weight:700;margin-bottom:10px">🔍 Enriquecer emails</h3>
+        <p style="font-size:0.79em;color:#6b7280;margin-bottom:14px">
+          Busca automáticamente el email en el sitio web de cada prospecto que no tiene correo registrado.
+        </p>
+        <button class="btn btn-primary" onclick="iniciarEnriquecimiento()" id="btn-enriquecer" style="width:100%">
+          Enriquecer todos
+        </button>
+        <div id="enrich-status" style="margin-top:12px;display:none">
+          <div style="font-size:0.78em;color:#6b7280;margin-bottom:4px" id="enrich-label">Procesando...</div>
+          <div class="progress-bar"><div class="progress-fill" id="enrich-bar" style="width:0%"></div></div>
+          <div class="log-box" id="enrich-log"></div>
+        </div>
+      </div>
+
+      <!-- Segmentos -->
+      <div class="table-card">
+        <div style="padding:14px 20px;border-bottom:1px solid #f5f5f5;font-size:0.85em;font-weight:700;color:var(--navy)">
+          Segmentos — clic en Enviar para lanzar campaña
+        </div>
+        <div style="padding:4px 8px" id="segmentos-container">
+          <div class="empty"><div class="e-icon">📊</div><p>Cargando segmentos...</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="table-card">
+      <div style="padding:14px 20px;border-bottom:1px solid #f5f5f5;font-size:0.85em;font-weight:700;color:var(--navy)">
+        Log de correos enviados
+      </div>
+      <div class="table-wrap">
+        <table><thead id="thead-corrlog"></thead><tbody id="tbody-corrlog"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+
 </div><!-- /main -->
 
 <!-- ─── MODAL AGREGAR PROSPECTO ─── -->
@@ -731,6 +800,33 @@
   </div>
 </div>
 
+<!-- ─── MODAL CAMPAÑA PREVIEW ─── -->
+<div class="overlay" id="modal-campana">
+  <div class="modal" style="max-width:520px">
+    <h2>Confirmar campaña de correos</h2>
+    <div id="campana-preview-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-campana')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarCampana()" id="btn-confirmar-campana">
+        ✉️ Enviar campaña
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODAL CAMPAÑA STATUS ─── -->
+<div class="overlay" id="modal-campana-status">
+  <div class="modal" style="max-width:460px">
+    <h2 id="campana-status-title">Enviando campaña...</h2>
+    <div style="font-size:0.8em;color:#6b7280;margin-bottom:8px" id="campana-status-label">Iniciando...</div>
+    <div class="progress-bar"><div class="progress-fill" id="campana-bar" style="width:0%"></div></div>
+    <div class="log-box" id="campana-log" style="margin-top:10px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarStatusCampana()" id="btn-cerrar-campana" disabled>Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ─── STATE ────────────────────────────────────────
 const state = {
@@ -760,7 +856,8 @@ function go(section) {
     dashboard: 'Dashboard', 'por-llamar': 'Por Llamar',
     prospectos: 'Todos los Prospectos', llamadas: 'Llamadas Realizadas',
     pipeline: 'Pipeline de Ventas', clientes: 'Clientes Convertidos',
-    mensajes: 'Plantillas de Mensajes', importador: 'Importador Google Maps'
+    mensajes: 'Plantillas de Mensajes', importador: 'Importador Google Maps',
+    correos: 'Correos — Campañas de Email',
   };
   document.getElementById('topbar-title').textContent = titles[section] || section;
   state.section = section;
@@ -781,6 +878,7 @@ async function loadSection(sec) {
     pipeline:    loadPipeline,
     clientes:    loadClientes,
     mensajes:    loadMensajes,
+    correos:     loadCorreos,
   };
   if (map[sec]) await map[sec]();
 }
@@ -1155,6 +1253,183 @@ async function apiFetch(url, method = 'GET', body = null) {
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── CORREOS ─────────────────────────────────────
+let _enrichPoll  = null;
+let _campanaPoll = null;
+let _currentCampana = null;
+
+async function loadCorreos() {
+  const d = await apiFetch('/api/correos/stats');
+  if (d.error) return;
+  state.data.correos = d;
+
+  document.getElementById('cc-total').textContent    = d.con_email   || 0;
+  document.getElementById('cc-sin').textContent      = d.sin_email   || 0;
+  document.getElementById('cc-enviados').textContent = d.enviados    || 0;
+  const tasa = d.total > 0 ? Math.round((d.con_email / d.total) * 100) : 0;
+  document.getElementById('cc-tasa').textContent     = tasa + '%';
+  document.getElementById('cc-aptos').textContent    = `${d.aptos_con_email || 0} / ${d.aptos || 0}`;
+  document.getElementById('badge-correos').textContent = d.con_email || 0;
+
+  renderSegmentos(d.segmentos || {});
+  loadCorreosLog();
+}
+
+function renderSegmentos(segmentos) {
+  const container = document.getElementById('segmentos-container');
+  const entries = Object.entries(segmentos).filter(([, v]) => v.total > 0);
+  if (!entries.length) {
+    container.innerHTML = '<div class="empty"><div class="e-icon">📊</div><p>Sin datos de segmentación</p></div>';
+    return;
+  }
+  entries.sort((a, b) => b[1].con_email - a[1].con_email);
+  container.innerHTML = `
+    <table class="seg-table">
+      <thead>
+        <tr>
+          <th>Segmento</th>
+          <th style="text-align:center">Aptos</th>
+          <th style="text-align:center">Con email</th>
+          <th style="text-align:center">Sin email</th>
+          <th style="text-align:center">Temp.</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${entries.map(([key, info]) => {
+          const tempCls = {'frío':'temp-frio','tibio':'temp-tibio','caliente':'temp-caliente'}[info.temperatura] || 'temp-frio';
+          const canSend = info.con_email > 0;
+          return `<tr>
+            <td style="font-weight:600">${esc(info.nombre)}</td>
+            <td style="text-align:center;color:#0ea5e9;font-weight:700">${info.aptos || 0}</td>
+            <td style="text-align:center;color:var(--blue);font-weight:700">${info.con_email}</td>
+            <td style="text-align:center;color:#9ca3af">${info.sin_email}</td>
+            <td style="text-align:center"><span class="temp-badge ${tempCls}">${esc(info.temperatura)}</span></td>
+            <td style="text-align:right">
+              ${canSend
+                ? `<button class="action-btn ab-edit" onclick="abrirCampana('${key}','${info.template_key}','${esc(info.nombre)}',${info.con_email})">✉️ Enviar</button>`
+                : '<span style="color:#d1d5db;font-size:0.78em">sin emails</span>'}
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function loadCorreosLog() {
+  const d = await apiFetch('/api/correos/log');
+  const logs = (d.log || []).slice().reverse().slice(0, 50);
+  const thead = document.getElementById('thead-corrlog');
+  const tbody  = document.getElementById('tbody-corrlog');
+  if (!thead || !tbody) return;
+  thead.innerHTML = '<tr><th>Fecha</th><th>Empresa</th><th>Email</th><th>Segmento</th><th>Estado</th></tr>';
+  if (!logs.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#8d99ae">Sin correos enviados aún</td></tr>';
+    return;
+  }
+  const stateCls = { Enviado: 'badge-cliente', Error: 'badge-no_interesa' };
+  tbody.innerHTML = logs.map(l => `
+    <tr>
+      <td style="white-space:nowrap;color:#6b7280;font-size:0.82em">${esc(l['Timestamp']||'')}</td>
+      <td><strong>${esc(l['Empresa']||'')}</strong></td>
+      <td style="font-size:0.82em;color:#6b7280">${esc(l['Email']||'')}</td>
+      <td><span style="font-size:0.75em;background:#e8edff;color:#4361ee;padding:2px 8px;border-radius:8px">${esc(l['Segmento']||'')}</span></td>
+      <td><span class="badge ${stateCls[l['Estado']] || 'badge-contactado'}">${esc(l['Estado']||'')}</span></td>
+    </tr>`).join('');
+}
+
+// ── Enricher ─────────────────────────────────
+async function iniciarEnriquecimiento() {
+  document.getElementById('btn-enriquecer').disabled = true;
+  document.getElementById('enrich-status').style.display = 'block';
+  document.getElementById('enrich-log').innerHTML = '';
+  document.getElementById('enrich-bar').style.width = '0%';
+  const r = await apiFetch('/api/correos/enriquecer-batch', 'POST');
+  if (r.error) {
+    alert(r.error);
+    document.getElementById('btn-enriquecer').disabled = false;
+    return;
+  }
+  _enrichPoll = setInterval(pollEnriquecimiento, 4000);
+}
+
+async function pollEnriquecimiento() {
+  const d = await apiFetch('/api/correos/estado-enriquecimiento');
+  const pct = d.total > 0 ? Math.round((d.procesados / d.total) * 100) : 0;
+  document.getElementById('enrich-bar').style.width   = pct + '%';
+  document.getElementById('enrich-label').textContent =
+    `${d.procesados}/${d.total} procesados · ${d.encontrados} emails encontrados`;
+  document.getElementById('enrich-log').innerHTML =
+    (d.log || []).slice(-15).map(l => `<div>${esc(l)}</div>`).join('');
+  if (d.status === 'done' || d.status === 'error') {
+    clearInterval(_enrichPoll);
+    document.getElementById('btn-enriquecer').disabled = false;
+    if (d.status === 'done') { state.data.correos = null; loadCorreos(); }
+    if (d.error) document.getElementById('enrich-label').textContent = `Error: ${d.error}`;
+  }
+}
+
+// ── Campaña ───────────────────────────────────
+function abrirCampana(segKey, templateKey, nombre, count) {
+  _currentCampana = { segKey, templateKey, nombre, count };
+  document.getElementById('campana-preview-body').innerHTML = `
+    <div style="background:#f8f9ff;border-radius:10px;padding:16px;margin-bottom:14px">
+      <div style="font-size:0.78em;color:#6b7280;margin-bottom:6px">Campaña seleccionada</div>
+      <div style="font-weight:700;font-size:1em;margin-bottom:4px">${esc(nombre)}</div>
+      <div style="font-size:0.83em;color:#374151">
+        <strong>${count}</strong> prospectos con email registrado recibirán este correo.
+      </div>
+      <div style="font-size:0.76em;color:#9ca3af;margin-top:6px">Template: <code>${esc(templateKey)}</code></div>
+    </div>
+    <div style="font-size:0.81em;color:#92400e;background:#fef3c7;padding:10px 14px;border-radius:8px">
+      ⚠️ Se enviará un correo personalizado a cada prospecto. Los prospectos con estado "Enviado" no serán contactados de nuevo.
+    </div>`;
+  openModal('modal-campana');
+}
+
+async function confirmarCampana() {
+  if (!_currentCampana) return;
+  closeModal('modal-campana');
+  openModal('modal-campana-status');
+  document.getElementById('campana-bar').style.width = '0%';
+  document.getElementById('campana-log').innerHTML   = '';
+  document.getElementById('campana-status-title').textContent = 'Enviando campaña...';
+  document.getElementById('campana-status-label').textContent = 'Iniciando...';
+  document.getElementById('btn-cerrar-campana').disabled = true;
+
+  const r = await apiFetch('/api/correos/campana', 'POST', {
+    segmento_key: _currentCampana.segKey,
+    template_key: _currentCampana.templateKey,
+  });
+  if (r.error) {
+    alert(r.error);
+    closeModal('modal-campana-status');
+    return;
+  }
+  _campanaPoll = setInterval(pollCampana, 3000);
+}
+
+async function pollCampana() {
+  const d = await apiFetch('/api/correos/estado-campana');
+  const pct = d.total > 0 ? Math.round((d.enviados / d.total) * 100) : 0;
+  document.getElementById('campana-bar').style.width = pct + '%';
+  document.getElementById('campana-status-label').textContent =
+    `${d.enviados}/${d.total} enviados · ${d.errores} errores`;
+  document.getElementById('campana-log').innerHTML =
+    (d.log || []).slice(-20).map(l => `<div>${esc(l)}</div>`).join('');
+  if (d.status === 'done' || d.status === 'error') {
+    clearInterval(_campanaPoll);
+    document.getElementById('btn-cerrar-campana').disabled = false;
+    document.getElementById('campana-status-title').textContent =
+      d.status === 'done' ? '✓ Campaña completada' : '⚠️ Error en campaña';
+    if (d.status === 'done') { state.data.correos = null; loadCorreos(); }
+  }
+}
+
+function cerrarStatusCampana() {
+  closeModal('modal-campana-status');
 }
 
 // ─── INIT ────────────────────────────────────────

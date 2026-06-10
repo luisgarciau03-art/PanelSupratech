@@ -31,6 +31,7 @@ SHEET_IDS = {
     'clientes':        os.environ.get('CLIENTES_SHEET_ID',    _MASTER_SHEET),
     'seguimiento':     os.environ.get('SEGUIMIENTO_SHEET_ID', _MASTER_SHEET),
     'mensajes':        os.environ.get('MENSAJES_SHEET_ID',    _MASTER_SHEET),
+    'correos_log':     os.environ.get('CORREOS_SHEET_ID',     _MASTER_SHEET),
 }
 
 # Si prefieres un solo spreadsheet con múltiples hojas, pon el mismo ID en todos
@@ -42,12 +43,18 @@ SHEET_TABS = {
     'clientes':         os.environ.get('TAB_CLIENTES',         'CLIENTES'),
     'seguimiento':      os.environ.get('TAB_SEGUIMIENTO',      'SEGUIMIENTO'),
     'mensajes':         os.environ.get('TAB_MENSAJES',         'MENSAJES'),
+    'correos_log':      os.environ.get('TAB_CORREOS',          'CORREOS LOG'),
 }
 
 IMGBB_API_KEY   = os.environ.get('IMGBB_API_KEY', '')
 GMAPS_API_KEY   = os.environ.get('GOOGLE_PLACES_API_KEY', '') or os.environ.get('GMAPS_API_KEY', '')
 TELEGRAM_TOKEN  = os.environ.get('TELEGRAM_TOKEN', '')
 TELEGRAM_CHAT   = os.environ.get('TELEGRAM_CHAT_ID', '')
+
+CF_WORKER_URL    = os.environ.get('CF_WORKER_URL', '')
+CF_WORKER_SECRET = os.environ.get('CF_WORKER_SECRET', '')
+FROM_EMAIL       = os.environ.get('FROM_EMAIL', 'ventas@supratech.mx')
+FROM_NAME        = os.environ.get('FROM_NAME', 'Supratech')
 
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
@@ -95,7 +102,8 @@ SHEET_HEADERS = {
     'prospectos':  ['Nombre', 'Empresa', 'Giro', 'Ciudad', 'Teléfono', 'WhatsApp',
                     'Empleados', 'Estado', 'Etapa', 'Origen', 'Fecha', 'Notas',
                     'Nombre Gerente', 'Tel Directo', 'Correo Gerente',
-                    'Calificación', 'Reseñas', 'Dirección', 'Sitio Web', 'Maps Link'],
+                    'Calificación', 'Reseñas', 'Dirección', 'Sitio Web', 'Maps Link',
+                    'Correo Email', 'Email Estado', 'Email Fecha', 'Segmento Email'],
     'llamadas_filtro': ['Timestamp', 'Empresa', 'Ciudad', 'Reseñas',
                         'Respondió', 'Quién Atendió', 'Pasaron con Gerente',
                         'Nombre Gerente', 'Tel Directo', 'Correo Gerente',
@@ -109,6 +117,8 @@ SHEET_HEADERS = {
                     'Notas', 'Responsable'],
     'mensajes':    ['Intro Llamada', 'Presentación Supratech', 'Manejo de Objeciones',
                     'Cierre Demo', 'Follow-up WhatsApp', 'No Interesa - Cierre Amable'],
+    'correos_log': ['Timestamp', 'Empresa', 'Email', 'Segmento', 'Template',
+                    'Asunto', 'Estado', 'Notas'],
 }
 
 def _init_headers(ws, key):
@@ -365,6 +375,368 @@ def _worker_importador(ciudad):
     except Exception as e:
         with _import_lock:
             _import_job.update({'status': 'error', 'error': str(e)})
+
+# ─────────────────────────────────────────────
+# CORREOS — SEGMENTACIÓN
+# ─────────────────────────────────────────────
+GRUPOS_GIRO = {
+    'Industrial':   ['Ferreterías', 'Tornillerías', 'Distribuidoras de herramientas',
+                     'Distribuidoras de equipo de seguridad industrial',
+                     'Distribuidoras de consumibles industriales'],
+    'Construcción': ['Distribuidoras de materiales de construcción',
+                     'Distribuidoras de plásticos',
+                     'Negocios de plásticos desechables mayoristas'],
+    'Consumo':      ['Distribuidoras de abarrotes',
+                     'Distribuidoras de productos de limpieza',
+                     'Papelerías mayoristas'],
+    'Salud':        ['Farmacias independientes', 'Distribuidoras farmacéuticas',
+                     'Distribuidoras de productos veterinarios'],
+    'Automotriz':   ['Refaccionarias autopartes', 'Mayoristas'],
+}
+
+_GIRO_TO_GRUPO = {
+    giro: grupo
+    for grupo, giros in GRUPOS_GIRO.items()
+    for giro in giros
+}
+
+def _get_grupo(giro: str) -> str:
+    return _GIRO_TO_GRUPO.get(giro, 'General')
+
+def _get_tamano(resenas) -> str:
+    try:
+        n = int(resenas or 0)
+    except (ValueError, TypeError):
+        n = 0
+    if n >= 1000: return 'grande'
+    if n >= 300:  return 'mediano'
+    return 'pequeño'
+
+def _get_temperatura(etapa: str, estado: str) -> str:
+    if estado in ('Interesado', 'Demo agendada'):
+        return 'caliente'
+    if etapa == 'Pitch' or estado in ('Contacto obtenido', 'Contactado'):
+        return 'tibio'
+    return 'frío'
+
+# Giros con cultura de correo más formal (administración revisa email,
+# cotizaciones/facturas por correo). Fuera de estos, WhatsApp/llamada
+# rinde más que el correo frío.
+_GIROS_EMAIL_FORMALES = {'Industrial', 'Construcción', 'Salud'}
+
+def _apto_email(grupo: str, tamano: str, temperatura: str, sitio_web: str) -> bool:
+    if not (sitio_web or '').strip():
+        return False
+    # Ya hay relación previa (tibio/caliente) → el correo es seguimiento,
+    # aplica sin importar giro o tamaño.
+    if temperatura in ('tibio', 'caliente'):
+        return True
+    # Frío: solo negocios medianos/grandes de giros con cultura de email formal
+    return tamano in ('mediano', 'grande') and grupo in _GIROS_EMAIL_FORMALES
+
+def get_segmento(p: dict) -> dict:
+    grupo       = _get_grupo(p.get('Giro', ''))
+    tamano      = _get_tamano(p.get('Reseñas', 0))
+    temperatura = _get_temperatura(p.get('Etapa', 'Filtro'), p.get('Estado', 'Por llamar'))
+    return {
+        'grupo':       grupo,
+        'tamano':      tamano,
+        'temperatura': temperatura,
+        'apto_email':  _apto_email(grupo, tamano, temperatura, p.get('Sitio Web', '')),
+    }
+
+def get_segmento_key(p: dict) -> str:
+    seg = get_segmento(p)
+    return f"{seg['grupo']}_{seg['temperatura']}"
+
+# ─────────────────────────────────────────────
+# CORREOS — TEMPLATES DE EMAIL
+# ─────────────────────────────────────────────
+_CSS = """<style>
+body{font-family:Arial,sans-serif;color:#2b2d42;line-height:1.65;max-width:600px;margin:0 auto;padding:0}
+.wrap{padding:32px 28px}
+.hdr{border-bottom:3px solid #4361ee;padding-bottom:14px;margin-bottom:22px}
+.brand{font-size:1.25em;font-weight:700;color:#4361ee}
+.sub{font-size:0.78em;color:#8d99ae;margin-top:2px}
+p{margin:0 0 13px}
+ul{margin:0 0 14px;padding-left:20px}
+li{margin-bottom:5px}
+.cta{display:inline-block;background:#4361ee;color:#fff !important;padding:12px 30px;
+     border-radius:8px;text-decoration:none;font-weight:700;margin:10px 0 18px}
+.ftr{margin-top:30px;border-top:1px solid #e5e7eb;padding-top:14px;
+     font-size:0.77em;color:#9ca3af}
+</style>"""
+
+EMAIL_TEMPLATES = {
+    'frio_industrial': {
+        'nombre': 'Frío — Industrial',
+        'subject': '¿Cómo controlan el inventario en {empresa}?',
+        'html': _CSS + """<div class="wrap">
+<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<p>Hola{nombre_saludo},</p>
+<p>Vi que <strong>{empresa}</strong>, en {ciudad}, tiene una sólida presencia en el mercado industrial. Me pongo en contacto desde Supratech porque trabajamos con distribuidoras del mismo giro.</p>
+<p>El reto más frecuente que nos cuentan es el <strong>control de inventario</strong>: saber qué entra, qué sale y qué necesita reordenar — sin depender de Excel ni de memoria.</p>
+<p>Supratech permite:</p>
+<ul>
+<li>Ver inventario en tiempo real por almacén</li>
+<li>Generar órdenes de compra en segundos</li>
+<li>Controlar ventas y clientes desde el celular</li>
+</ul>
+<p>¿Tienen 15 minutos esta semana para una demo sin compromisos?</p>
+<a class="cta" href="https://supratech.mx/demo">Agendar demo gratis</a>
+<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
+<small>Para no recibir más correos, responda "BAJA".</small></div>
+</div>""",
+    },
+    'frio_construccion': {
+        'nombre': 'Frío — Construcción',
+        'subject': '{empresa}: ¿cuántos proveedores manejan sin un sistema centralizado?',
+        'html': _CSS + """<div class="wrap">
+<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<p>Hola{nombre_saludo},</p>
+<p>Encontramos a <strong>{empresa}</strong> en {ciudad} y nos llamó la atención su presencia en el mercado de materiales de construcción.</p>
+<p>En distribuidoras de materiales, el reto habitual es coordinar compras a múltiples proveedores, dar cotizaciones rápidas y mantener el inventario actualizado — todo al mismo tiempo.</p>
+<p>Supratech resuelve exactamente eso: un sistema donde manejan compras, ventas, inventario y clientes. Sin hojas de cálculo ni información duplicada.</p>
+<a class="cta" href="https://supratech.mx/demo">Ver demo de 15 minutos</a>
+<p>¿Le interesaría conocer cómo funciona? Puedo mostrárselo esta semana.</p>
+<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
+<small>Para no recibir más correos, responda "BAJA".</small></div>
+</div>""",
+    },
+    'frio_consumo': {
+        'nombre': 'Frío — Consumo',
+        'subject': 'Control de inventario para distribuidoras como {empresa}',
+        'html': _CSS + """<div class="wrap">
+<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<p>Hola{nombre_saludo},</p>
+<p>Me pongo en contacto desde Supratech. Encontramos a <strong>{empresa}</strong> en {ciudad} y creemos que podemos ayudarles.</p>
+<p>Para distribuidoras de productos de consumo, el reto es claro: manejar alta rotación, controlar la merma y asegurarse de que los pedidos diarios a proveedores sean exactos.</p>
+<p>Con Supratech pueden ver en segundos qué producto está por agotarse, qué clientes compran más y generar pedidos automáticos al proveedor — desde una sola pantalla.</p>
+<a class="cta" href="https://supratech.mx/demo">Solicitar demo gratuita</a>
+<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
+<small>Para no recibir más correos, responda "BAJA".</small></div>
+</div>""",
+    },
+    'frio_salud': {
+        'nombre': 'Frío — Salud',
+        'subject': 'Trazabilidad y control de lotes para {empresa}',
+        'html': _CSS + """<div class="wrap">
+<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<p>Hola{nombre_saludo},</p>
+<p>Le escribo desde Supratech. Encontramos a <strong>{empresa}</strong> en {ciudad} y quería presentarles nuestra solución para el sector salud.</p>
+<p>En farmacias y distribuidoras farmacéuticas, el control de lotes y fechas de caducidad es crítico. Un error puede traducirse en devoluciones, sanciones o pérdida de clientes.</p>
+<p>Supratech ofrece control de inventario con trazabilidad por lote, alertas de caducidad y reportes de movimiento que facilitan cualquier auditoría.</p>
+<a class="cta" href="https://supratech.mx/demo">Ver demo — 15 minutos</a>
+<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
+<small>Para no recibir más correos, responda "BAJA".</small></div>
+</div>""",
+    },
+    'frio_automotriz': {
+        'nombre': 'Frío — Automotriz',
+        'subject': '¿Cuántas referencias maneja {empresa}? Supratech las organiza',
+        'html': _CSS + """<div class="wrap">
+<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<p>Hola{nombre_saludo},</p>
+<p>Me comunico desde Supratech. Vi que <strong>{empresa}</strong> opera en {ciudad} — nos especializamos en software para refaccionarias y distribuidoras automotrices.</p>
+<p>El reto más frecuente en el sector: miles de referencias, compatibilidades por año/marca/modelo y clientes que necesitan respuesta inmediata.</p>
+<p>Con Supratech buscan refacciones en segundos, ven disponibilidad en tiempo real y generan cotizaciones al momento. Menos tiempo buscando, más ventas cerradas.</p>
+<a class="cta" href="https://supratech.mx/demo">Agendar demo gratuita</a>
+<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
+<small>Para no recibir más correos, responda "BAJA".</small></div>
+</div>""",
+    },
+    'tibio': {
+        'nombre': 'Tibio — Seguimiento',
+        'subject': 'Seguimiento — Supratech y {empresa}',
+        'html': _CSS + """<div class="wrap">
+<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<p>Hola{nombre_saludo},</p>
+<p>Hace unos días intenté comunicarme con <strong>{empresa}</strong> en {ciudad} para presentarles Supratech — el software de operaciones para distribuidoras mexicanas.</p>
+<p>Quería hacer un seguimiento por si encontraron un momento. Entiendo que el día a día de una distribuidora es muy ocupado.</p>
+<p>Si gustan, puedo agendar una demo de 15 minutos en el horario que más les convenga — sin compromisos y completamente gratuita.</p>
+<a class="cta" href="https://supratech.mx/demo">Agendar demo</a>
+<p>Quedo al pendiente. Un saludo del equipo Supratech.</p>
+<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
+<small>Para no recibir más correos, responda "BAJA".</small></div>
+</div>""",
+    },
+    'caliente': {
+        'nombre': 'Caliente — Demo confirmada',
+        'subject': 'Confirmación de demo: Supratech × {empresa}',
+        'html': _CSS + """<div class="wrap">
+<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<p>Hola{nombre_saludo},</p>
+<p>Muchas gracias por confirmar su interés en Supratech. Nos da mucho gusto la oportunidad de mostrarles cómo podemos ayudar a <strong>{empresa}</strong>.</p>
+<p>En la demo les mostraremos:</p>
+<ul>
+<li>Gestión de inventario en tiempo real</li>
+<li>Control de pedidos y proveedores</li>
+<li>Reportes de ventas y clientes</li>
+<li>Acceso desde celular para gerentes</li>
+</ul>
+<p>Si antes de la demo quieren compartirnos contexto (número de SKUs, proveedores, sistema actual), pueden responder directamente a este correo — nos ayuda a personalizar la presentación.</p>
+<p>¡Nos vemos pronto!</p>
+<div class="ftr">Supratech · Software para distribuidoras mexicanas</div>
+</div>""",
+    },
+    'frio_general': {
+        'nombre': 'Frío — General',
+        'subject': '¿Cómo manejan los pedidos en {empresa}?',
+        'html': _CSS + """<div class="wrap">
+<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<p>Hola{nombre_saludo},</p>
+<p>Me pongo en contacto desde Supratech. Encontramos a <strong>{empresa}</strong> en {ciudad} y quería presentarles brevemente lo que hacemos.</p>
+<p>Supratech es un software diseñado para distribuidoras mexicanas de 5 a 50 empleados: control de inventario, gestión de pedidos a proveedores y visibilidad del negocio desde cualquier dispositivo.</p>
+<p>¿Tendrían 15 minutos esta semana para una demo? Sin compromiso y completamente gratis.</p>
+<a class="cta" href="https://supratech.mx/demo">Solicitar demo</a>
+<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
+<small>Para no recibir más correos, responda "BAJA".</small></div>
+</div>""",
+    },
+}
+
+_TEMP_TO_TEMPLATE = {
+    'caliente': 'caliente',
+    'tibio':    'tibio',
+}
+_GRUPO_TO_TEMPLATE = {
+    'Industrial':   'frio_industrial',
+    'Construcción': 'frio_construccion',
+    'Consumo':      'frio_consumo',
+    'Salud':        'frio_salud',
+    'Automotriz':   'frio_automotriz',
+}
+
+def get_template_key(p: dict) -> str:
+    seg = get_segmento(p)
+    if seg['temperatura'] in _TEMP_TO_TEMPLATE:
+        return _TEMP_TO_TEMPLATE[seg['temperatura']]
+    return _GRUPO_TO_TEMPLATE.get(seg['grupo'], 'frio_general')
+
+def render_email(template_key: str, p: dict) -> dict:
+    tpl = EMAIL_TEMPLATES.get(template_key) or EMAIL_TEMPLATES['frio_general']
+    gerente = p.get('Nombre Gerente', '').strip()
+    nombre_saludo = f' {gerente}' if gerente else ''
+    empresa = p.get('Empresa', p.get('Nombre', 'estimado negocio'))
+    ciudad  = p.get('Ciudad', 'su ciudad')
+
+    def apply(s):
+        return (s.replace('{empresa}', empresa)
+                 .replace('{ciudad}', ciudad)
+                 .replace('{nombre_saludo}', nombre_saludo))
+
+    return {'subject': apply(tpl['subject']), 'html': apply(tpl['html'])}
+
+# ─────────────────────────────────────────────
+# CORREOS — ENVÍO VIA CLOUDFLARE WORKER
+# ─────────────────────────────────────────────
+def send_email(to: str, subject: str, html: str) -> tuple:
+    """Envía un email via el Cloudflare Worker. Retorna (ok: bool, error: str)."""
+    if not CF_WORKER_URL:
+        return False, 'CF_WORKER_URL no configurada'
+    if not CF_WORKER_SECRET:
+        return False, 'CF_WORKER_SECRET no configurada'
+    try:
+        resp = requests.post(
+            CF_WORKER_URL,
+            json={'to': to, 'subject': subject, 'html': html},
+            headers={
+                'Authorization': f'Bearer {CF_WORKER_SECRET}',
+                'Content-Type': 'application/json',
+            },
+            timeout=15,
+        )
+        if resp.ok:
+            return True, ''
+        return False, f'HTTP {resp.status_code}: {resp.text[:200]}'
+    except Exception as e:
+        return False, str(e)
+
+# ─────────────────────────────────────────────
+# CORREOS — ENRIQUECIMIENTO DE EMAILS (batch)
+# ─────────────────────────────────────────────
+_enrich_job  = {'status': 'idle', 'total': 0, 'procesados': 0,
+                'encontrados': 0, 'log': [], 'error': None}
+_enrich_lock = threading.Lock()
+
+def _worker_enriquecer():
+    global _enrich_job
+    try:
+        from email_scraper import extract_email_from_website
+        prospectos = get_data('prospectos')
+        pendientes = [p for p in prospectos
+                      if p.get('Sitio Web') and not p.get('Correo Email')
+                      and get_segmento(p)['apto_email']]
+        with _enrich_lock:
+            _enrich_job['total'] = len(pendientes)
+        ws = get_worksheet('prospectos')
+        for i, p in enumerate(pendientes):
+            with _enrich_lock:
+                _enrich_job['procesados'] = i + 1
+            email  = extract_email_from_website(p.get('Sitio Web', ''))
+            estado = 'Encontrado' if email else 'Sin email'
+            updates = {'Email Estado': estado}
+            if email:
+                updates['Correo Email'] = email
+                with _enrich_lock:
+                    _enrich_job['encontrados'] += 1
+                    _enrich_job['log'].append(f"{p.get('Empresa','')}: {email}")
+            sheet_update_row(ws, p['_row'], updates)
+            time.sleep(0.5)
+        invalidar(['prospectos'])
+        with _enrich_lock:
+            _enrich_job['status'] = 'done'
+    except Exception as e:
+        with _enrich_lock:
+            _enrich_job.update({'status': 'error', 'error': str(e)})
+
+# ─────────────────────────────────────────────
+# CORREOS — CAMPAÑA (batch send)
+# ─────────────────────────────────────────────
+_campana_job  = {'status': 'idle', 'total': 0, 'enviados': 0,
+                 'errores': 0, 'log': [], 'error': None}
+_campana_lock = threading.Lock()
+
+def _worker_campana(targets: list, template_key: str):
+    global _campana_job
+    try:
+        ws_prosp = get_worksheet('prospectos')
+        ws_log   = get_worksheet('correos_log')
+        for p in targets:
+            email = p.get('Correo Email', '').strip()
+            if not email:
+                continue
+            seg      = get_segmento(p)
+            rendered = render_email(template_key, p)
+            ok, err  = send_email(email, rendered['subject'], rendered['html'])
+            ts       = datetime.now().strftime('%Y-%m-%d %H:%M')
+            estado   = 'Enviado' if ok else 'Error'
+            empresa  = p.get('Empresa', p.get('Nombre', ''))
+            ws_log.append_row([
+                ts, empresa, email,
+                f"{seg['grupo']} {seg['temperatura']}",
+                template_key, rendered['subject'], estado,
+                err if err else '',
+            ])
+            sheet_update_row(ws_prosp, p['_row'], {
+                'Email Estado':   estado,
+                'Email Fecha':    ts,
+                'Segmento Email': f"{seg['grupo']} {seg['tamano']} {seg['temperatura']}",
+            })
+            with _campana_lock:
+                if ok:
+                    _campana_job['enviados'] += 1
+                    _campana_job['log'].append(f"✓ {empresa}: {email}")
+                else:
+                    _campana_job['errores'] += 1
+                    _campana_job['log'].append(f"✗ {empresa}: {err[:80]}")
+            time.sleep(1)
+        invalidar(['prospectos', 'correos_log'])
+        with _campana_lock:
+            _campana_job['status'] = 'done'
+    except Exception as e:
+        with _campana_lock:
+            _campana_job.update({'status': 'error', 'error': str(e)})
 
 # ─────────────────────────────────────────────
 # TELEGRAM NOTIFICACIÓN
@@ -782,6 +1154,133 @@ def api_importador_iniciar():
 def api_importador_estado():
     with _import_lock:
         return jsonify(dict(_import_job))
+
+# ─────────────────────────────────────────────
+# API — CORREOS
+# ─────────────────────────────────────────────
+@app.route('/api/correos/stats')
+def api_correos_stats():
+    try:
+        prospectos = get_data('prospectos')
+        total      = len(prospectos)
+        con_email  = sum(1 for p in prospectos if p.get('Correo Email'))
+        sin_email  = total - con_email
+        enviados   = sum(1 for p in prospectos if p.get('Email Estado') == 'Enviado')
+
+        segmentos = {}
+        aptos          = 0
+        aptos_con_email = 0
+        for p in prospectos:
+            seg   = get_segmento(p)
+            skey  = f"{seg['grupo']}_{seg['temperatura']}"
+            tkey  = get_template_key(p)
+            nombre = f"{seg['grupo']} · {seg['temperatura'].capitalize()}"
+            if skey not in segmentos:
+                segmentos[skey] = {
+                    'nombre': nombre, 'grupo': seg['grupo'],
+                    'temperatura': seg['temperatura'], 'template_key': tkey,
+                    'con_email': 0, 'sin_email': 0, 'total': 0, 'aptos': 0,
+                }
+            segmentos[skey]['total'] += 1
+            if p.get('Correo Email'):
+                segmentos[skey]['con_email'] += 1
+            else:
+                segmentos[skey]['sin_email'] += 1
+            if seg['apto_email']:
+                segmentos[skey]['aptos'] += 1
+                aptos += 1
+                if p.get('Correo Email'):
+                    aptos_con_email += 1
+
+        return jsonify({'total': total, 'con_email': con_email,
+                        'sin_email': sin_email, 'enviados': enviados,
+                        'aptos': aptos, 'aptos_con_email': aptos_con_email,
+                        'segmentos': segmentos})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/correos/templates')
+def api_correos_templates():
+    return jsonify({k: {'nombre': v['nombre'], 'subject': v['subject']}
+                    for k, v in EMAIL_TEMPLATES.items()})
+
+@app.route('/api/correos/enriquecer', methods=['POST'])
+def api_correos_enriquecer_uno():
+    """Enriquece el email de un único prospecto por _row."""
+    try:
+        from email_scraper import extract_email_from_website
+        d    = request.get_json() or {}
+        row  = int(d.get('_row', 0))
+        url  = d.get('sitio_web', '')
+        if not row or not url:
+            return jsonify({'error': '_row y sitio_web requeridos'}), 400
+        email  = extract_email_from_website(url)
+        ws     = get_worksheet('prospectos')
+        estado = 'Encontrado' if email else 'Sin email'
+        sheet_update_row(ws, row, {'Correo Email': email or '', 'Email Estado': estado})
+        invalidar(['prospectos'])
+        return jsonify({'ok': True, 'email': email, 'estado': estado})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/correos/enriquecer-batch', methods=['POST'])
+def api_correos_enriquecer_batch():
+    global _enrich_job
+    with _enrich_lock:
+        if _enrich_job['status'] == 'running':
+            return jsonify({'error': 'Ya hay un enriquecimiento en curso'}), 400
+        _enrich_job = {'status': 'running', 'total': 0, 'procesados': 0,
+                       'encontrados': 0, 'log': [], 'error': None}
+    threading.Thread(target=_worker_enriquecer, daemon=True).start()
+    return jsonify({'ok': True})
+
+@app.route('/api/correos/estado-enriquecimiento')
+def api_correos_estado_enriquecimiento():
+    with _enrich_lock:
+        return jsonify(dict(_enrich_job))
+
+@app.route('/api/correos/campana', methods=['POST'])
+def api_correos_campana():
+    global _campana_job
+    with _campana_lock:
+        if _campana_job['status'] == 'running':
+            return jsonify({'error': 'Ya hay una campaña en curso'}), 400
+    d            = request.get_json() or {}
+    segmento_key = d.get('segmento_key', '')
+    template_key = d.get('template_key', '')
+    if not template_key or template_key not in EMAIL_TEMPLATES:
+        return jsonify({'error': 'template_key inválido'}), 400
+    prospectos = get_data('prospectos')
+    if segmento_key:
+        targets = [p for p in prospectos
+                   if p.get('Correo Email')
+                   and p.get('Email Estado') != 'Enviado'
+                   and get_segmento_key(p) == segmento_key
+                   and get_segmento(p)['apto_email']]
+    else:
+        targets = [p for p in prospectos
+                   if p.get('Correo Email') and p.get('Email Estado') != 'Enviado'
+                   and get_segmento(p)['apto_email']]
+    if not targets:
+        return jsonify({'error': 'Sin prospectos con email para este segmento'}), 400
+    with _campana_lock:
+        _campana_job = {'status': 'running', 'total': len(targets),
+                        'enviados': 0, 'errores': 0, 'log': [], 'error': None}
+    threading.Thread(target=_worker_campana,
+                     args=(targets, template_key), daemon=True).start()
+    return jsonify({'ok': True, 'total': len(targets)})
+
+@app.route('/api/correos/estado-campana')
+def api_correos_estado_campana():
+    with _campana_lock:
+        return jsonify(dict(_campana_job))
+
+@app.route('/api/correos/log')
+def api_correos_log():
+    try:
+        return jsonify({'log': get_data('correos_log')})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # ─────────────────────────────────────────────
 # MAIN

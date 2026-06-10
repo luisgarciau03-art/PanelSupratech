@@ -1,0 +1,20 @@
+name            = "supratech-correos"
+main            = "index.js"
+compatibility_date = "2024-11-01"
+
+# Variables de entorno — configurar en Cloudflare Dashboard
+# Workers & Pages → supratech-correos → Settings → Variables and Secrets
+#
+# Variable       Descripción
+# ─────────────────────────────────────────────────────────────
+# WORKER_SECRET        Clave secreta compartida con Flask (CF_WORKER_SECRET en .env)
+# FROM_EMAIL           Email remitente verificado, ej: ventas@supratech.mx
+# FROM_NAME            Nombre de pantalla, ej: Supratech
+# MAILCHANNELS_API_KEY API key de tu cuenta MailChannels
+#
+# Para desplegar:
+#   wrangler login
+#   wrangler deploy
+#
+# URL del worker resultante (agregar a .env como CF_WORKER_URL):
+#   https://supratech-correos.<tu-subdomain>.workers.dev
