@@ -33,6 +33,8 @@ SHEET_IDS = {
     'mensajes':        os.environ.get('MENSAJES_SHEET_ID',    _MASTER_SHEET),
     'correos_log':     os.environ.get('CORREOS_SHEET_ID',     _MASTER_SHEET),
     'importaciones':   os.environ.get('IMPORTACIONES_SHEET_ID', _MASTER_SHEET),
+    'prospectos_correo':    os.environ.get('PROSPECTOS_CORREO_SHEET_ID',    _MASTER_SHEET),
+    'importaciones_correo': os.environ.get('IMPORTACIONES_CORREO_SHEET_ID', _MASTER_SHEET),
 }
 
 # Si prefieres un solo spreadsheet con múltiples hojas, pon el mismo ID en todos
@@ -46,6 +48,8 @@ SHEET_TABS = {
     'mensajes':         os.environ.get('TAB_MENSAJES',         'MENSAJES'),
     'correos_log':      os.environ.get('TAB_CORREOS',          'CORREOS LOG'),
     'importaciones':    os.environ.get('TAB_IMPORTACIONES',    'IMPORTACIONES'),
+    'prospectos_correo':    os.environ.get('TAB_PROSPECTOS_CORREO',    'PROSPECTOS CORREO'),
+    'importaciones_correo': os.environ.get('TAB_IMPORTACIONES_CORREO', 'IMPORTACIONES CORREO'),
 }
 
 IMGBB_API_KEY   = os.environ.get('IMGBB_API_KEY', '')
@@ -123,6 +127,10 @@ SHEET_HEADERS = {
                     'Asunto', 'Estado', 'Notas'],
     'importaciones': ['Fecha', 'Estado', 'Ciudad', 'Nuevos', 'Total Encontrados'],
 }
+# Canal de Correo: mismas hojas/esquema que Llamadas, pero completamente
+# independientes (sin compartir progreso de importación ni prospectos).
+SHEET_HEADERS['prospectos_correo']    = SHEET_HEADERS['prospectos']
+SHEET_HEADERS['importaciones_correo'] = SHEET_HEADERS['importaciones']
 
 def _init_headers(ws, key):
     """Inicializa encabezados en hojas nuevas."""
@@ -251,18 +259,6 @@ def get_prospecto_pendiente(skip=0, etapa='Filtro'):
 # ─────────────────────────────────────────────
 # IMPORTADOR (Google Maps) — requiere GMAPS_API_KEY
 # ─────────────────────────────────────────────
-_import_job = {
-    'status':    'idle',
-    'estado':    '',
-    'ciudad':    '',
-    'progreso':  0,
-    'encontrados': 0,
-    'descartados': 0,
-    'log':       [],
-    'error':     None,
-}
-_import_lock = threading.Lock()
-
 # Ciudades comerciales/industriales relevantes por estado, para cubrir
 # sistemáticamente la importación sin repetir ni saltarse ninguna.
 CIUDADES_POR_ESTADO = {
@@ -300,7 +296,7 @@ CIUDADES_POR_ESTADO = {
     'Zacatecas':            ['Zacatecas', 'Fresnillo', 'Guadalupe'],
 }
 
-CATEGORIAS_IMPORTADOR = [
+CATEGORIAS_LLAMADAS = [
     'Ferreterías',
     'Tornillerías',
     'Distribuidoras de materiales de construcción',
@@ -333,6 +329,45 @@ CATEGORIAS_IMPORTADOR = [
     'Centros de abasto y mayoreo',
 ]
 
+# Canal de Correo: lista independiente — arranca igual a Llamadas pero puede
+# ajustarse por separado sin afectar al canal de Llamadas.
+CATEGORIAS_CORREO = list(CATEGORIAS_LLAMADAS)
+
+# Dos canales de prospección totalmente independientes: el importador de
+# Llamadas no beneficia al de Correo y viceversa — cada uno tiene su propia
+# hoja de prospectos, su propio log de importaciones (checklist) y su propia
+# lista de categorías.
+IMPORT_CHANNELS = {
+    'llamadas': {
+        'sheet':           'prospectos',
+        'log_sheet':       'importaciones',
+        'categorias':      CATEGORIAS_LLAMADAS,
+        'campo_requerido': 'formatted_phone_number',  # debe tener teléfono
+    },
+    'correo': {
+        'sheet':           'prospectos_correo',
+        'log_sheet':       'importaciones_correo',
+        'categorias':      CATEGORIAS_CORREO,
+        'campo_requerido': 'website',  # debe tener sitio web
+    },
+}
+
+def _new_import_job():
+    return {
+        'status':      'idle',
+        'estado':      '',
+        'ciudad':      '',
+        'categoria':   '',
+        'progreso':    0,
+        'encontrados': 0,
+        'descartados': 0,
+        'log':         [],
+        'error':       None,
+    }
+
+_import_jobs  = {canal: _new_import_job() for canal in IMPORT_CHANNELS}
+_import_locks = {canal: threading.Lock() for canal in IMPORT_CHANNELS}
+
 def _relevancia(r):
     """Ordena por número de reseñas descendente (más opiniones = más establecido)."""
     try:
@@ -346,7 +381,7 @@ def _relevancia(r):
 # Details, quedándonos con los de más reseñas (los más establecidos).
 MAX_DETALLES_POR_CATEGORIA = 8
 
-def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos):
+def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos, campo_requerido='formatted_phone_number'):
     query = f'{categoria} en {ciudad} Mexico'
     resp  = gmaps.places(query=query)
 
@@ -375,9 +410,9 @@ def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos):
         det = gmaps.place(place_id=pid, fields=[
             'name', 'formatted_phone_number', 'formatted_address', 'website', 'url'
         ]).get('result', {})
-        tel = det.get('formatted_phone_number', '')
-        if not tel:
+        if not det.get(campo_requerido):
             continue
+        tel = det.get('formatted_phone_number', '')
         nombre = det.get('name', place.get('name', ''))
         nombres_vistos.add(nombre.strip().lower())
         maps_url = det.get('url', f'https://www.google.com/maps/place/?q=place_id:{pid}')
@@ -385,7 +420,7 @@ def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos):
             'Nombre':       nombre,
             'Ciudad':       ciudad,
             'Giro':         categoria,
-            'Teléfono':     tel.replace(' ', '').replace('-', ''),
+            'Teléfono':     tel.replace(' ', '').replace('-', '') if tel else '',
             'Dirección':    det.get('formatted_address', ''),
             'Sitio Web':    det.get('website', ''),
             'Calificación': place.get('rating', 0) or 0,
@@ -396,7 +431,7 @@ def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos):
     resultados.sort(key=_relevancia, reverse=True)
     return resultados
 
-def _exportar_a_prospectos(ws, resultados, ciudad):
+def _exportar_a_prospectos(ws, resultados, ciudad, sheet_key='prospectos'):
     if not resultados:
         return 0
     rows = [[
@@ -422,46 +457,49 @@ def _exportar_a_prospectos(ws, resultados, ciudad):
         r.get('Maps Link', ''),
     ] for r in resultados]
     ws.append_rows(rows)
-    invalidar(['prospectos'])
+    invalidar([sheet_key])
     return len(rows)
 
-def _registrar_importacion(estado, ciudad, nuevos, total_encontrados):
+def _registrar_importacion(log_sheet_key, estado, ciudad, nuevos, total_encontrados):
     try:
-        ws = get_worksheet('importaciones')
+        ws = get_worksheet(log_sheet_key)
         ws.append_row([
             datetime.now().strftime('%d/%m/%Y %H:%M'),
             estado, ciudad, str(nuevos), str(total_encontrados),
         ])
-        invalidar(['importaciones'])
+        invalidar([log_sheet_key])
     except Exception:
         pass
 
-def _worker_importador(estado, ciudad):
-    global _import_job
+def _worker_importador(canal, estado, ciudad):
+    cfg = IMPORT_CHANNELS[canal]
+    job  = _import_jobs[canal]
+    lock = _import_locks[canal]
     try:
         import googlemaps
         gmaps = googlemaps.Client(key=GMAPS_API_KEY)
-        ws = get_worksheet('prospectos')
+        ws = get_worksheet(cfg['sheet'])
         existing = ws.get_all_values()
         nombres_vistos = {r[0].strip().lower() for r in existing[1:] if r and r[0]}
+        categorias = cfg['categorias']
         total = 0
         total_encontrados = 0
-        for i, cat in enumerate(CATEGORIAS_IMPORTADOR):
-            with _import_lock:
-                _import_job.update({'categoria': cat, 'progreso': int(i / len(CATEGORIAS_IMPORTADOR) * 100)})
-            res = _buscar_negocios(gmaps, cat, ciudad, nombres_vistos)
-            n   = _exportar_a_prospectos(ws, res, ciudad)
+        for i, cat in enumerate(categorias):
+            with lock:
+                job.update({'categoria': cat, 'progreso': int(i / len(categorias) * 100)})
+            res = _buscar_negocios(gmaps, cat, ciudad, nombres_vistos, cfg['campo_requerido'])
+            n   = _exportar_a_prospectos(ws, res, ciudad, cfg['sheet'])
             total += n
             total_encontrados += len(res)
-            with _import_lock:
-                _import_job['encontrados'] = total
-                _import_job['log'].append(f'{cat}: {n} nuevos')
-        _registrar_importacion(estado, ciudad, total, total_encontrados)
-        with _import_lock:
-            _import_job.update({'status': 'done', 'progreso': 100})
+            with lock:
+                job['encontrados'] = total
+                job['log'].append(f'{cat}: {n} nuevos')
+        _registrar_importacion(cfg['log_sheet'], estado, ciudad, total, total_encontrados)
+        with lock:
+            job.update({'status': 'done', 'progreso': 100})
     except Exception as e:
-        with _import_lock:
-            _import_job.update({'status': 'error', 'error': str(e)})
+        with lock:
+            job.update({'status': 'error', 'error': str(e)})
 
 # ─────────────────────────────────────────────
 # CORREOS — SEGMENTACIÓN
@@ -750,13 +788,13 @@ def _worker_enriquecer():
     global _enrich_job
     try:
         from email_scraper import extract_email_from_website
-        prospectos = get_data('prospectos')
+        prospectos = get_data('prospectos_correo')
         pendientes = [p for p in prospectos
                       if p.get('Sitio Web') and not p.get('Correo Email')
                       and get_segmento(p)['apto_email']]
         with _enrich_lock:
             _enrich_job['total'] = len(pendientes)
-        ws = get_worksheet('prospectos')
+        ws = get_worksheet('prospectos_correo')
         for i, p in enumerate(pendientes):
             with _enrich_lock:
                 _enrich_job['procesados'] = i + 1
@@ -770,7 +808,7 @@ def _worker_enriquecer():
                     _enrich_job['log'].append(f"{p.get('Empresa','')}: {email}")
             sheet_update_row(ws, p['_row'], updates)
             time.sleep(0.5)
-        invalidar(['prospectos'])
+        invalidar(['prospectos_correo'])
         with _enrich_lock:
             _enrich_job['status'] = 'done'
     except Exception as e:
@@ -787,7 +825,7 @@ _campana_lock = threading.Lock()
 def _worker_campana(targets: list, template_key: str):
     global _campana_job
     try:
-        ws_prosp = get_worksheet('prospectos')
+        ws_prosp = get_worksheet('prospectos_correo')
         ws_log   = get_worksheet('correos_log')
         for p in targets:
             email = p.get('Correo Email', '').strip()
@@ -818,7 +856,7 @@ def _worker_campana(targets: list, template_key: str):
                     _campana_job['errores'] += 1
                     _campana_job['log'].append(f"✗ {empresa}: {err[:80]}")
             time.sleep(1)
-        invalidar(['prospectos', 'correos_log'])
+        invalidar(['prospectos_correo', 'correos_log'])
         with _campana_lock:
             _campana_job['status'] = 'done'
     except Exception as e:
@@ -1218,35 +1256,41 @@ def api_agregar_cliente():
 # ─────────────────────────────────────────────
 # API — IMPORTADOR (Google Maps)
 # ─────────────────────────────────────────────
-@app.route('/api/importador/iniciar', methods=['POST'])
-def api_importador_iniciar():
-    global _import_job
+@app.route('/api/importador/<canal>/iniciar', methods=['POST'])
+def api_importador_iniciar(canal):
+    if canal not in IMPORT_CHANNELS:
+        return jsonify({'error': 'Canal inválido'}), 404
     if not GMAPS_API_KEY:
         return jsonify({'error': 'GMAPS_API_KEY no configurada'}), 400
-    with _import_lock:
-        if _import_job['status'] == 'running':
+    lock = _import_locks[canal]
+    with lock:
+        if _import_jobs[canal]['status'] == 'running':
             return jsonify({'error': 'Ya hay una importación en curso'}), 400
         data   = request.get_json() or {}
         estado = (data.get('estado') or '').strip()
         ciudad = (data.get('ciudad') or '').strip()
         if not estado or not ciudad:
             return jsonify({'error': 'Estado y ciudad requeridos'}), 400
-        _import_job = {
+        _import_jobs[canal] = {
             'status': 'running', 'estado': estado, 'ciudad': ciudad, 'categoria': '',
             'progreso': 0, 'encontrados': 0, 'descartados': 0,
             'log': [], 'error': None,
         }
-    threading.Thread(target=_worker_importador, args=(estado, ciudad), daemon=True).start()
+    threading.Thread(target=_worker_importador, args=(canal, estado, ciudad), daemon=True).start()
     return jsonify({'ok': True})
 
-@app.route('/api/importador/estado')
-def api_importador_estado():
-    with _import_lock:
-        return jsonify(dict(_import_job))
+@app.route('/api/importador/<canal>/estado')
+def api_importador_estado(canal):
+    if canal not in IMPORT_CHANNELS:
+        return jsonify({'error': 'Canal inválido'}), 404
+    with _import_locks[canal]:
+        return jsonify(dict(_import_jobs[canal]))
 
-@app.route('/api/importador/checklist')
-def api_importador_checklist():
-    importaciones = get_data('importaciones')
+@app.route('/api/importador/<canal>/checklist')
+def api_importador_checklist(canal):
+    if canal not in IMPORT_CHANNELS:
+        return jsonify({'error': 'Canal inválido'}), 404
+    importaciones = get_data(IMPORT_CHANNELS[canal]['log_sheet'])
     hechas = {}
     for r in importaciones:
         key = (r.get('Estado', '').strip(), r.get('Ciudad', '').strip())
@@ -1280,7 +1324,7 @@ def api_importador_checklist():
 @app.route('/api/correos/stats')
 def api_correos_stats():
     try:
-        prospectos = get_data('prospectos')
+        prospectos = get_data('prospectos_correo')
         total      = len(prospectos)
         con_email  = sum(1 for p in prospectos if p.get('Correo Email'))
         sin_email  = total - con_email
@@ -1334,10 +1378,10 @@ def api_correos_enriquecer_uno():
         if not row or not url:
             return jsonify({'error': '_row y sitio_web requeridos'}), 400
         email  = extract_email_from_website(url)
-        ws     = get_worksheet('prospectos')
+        ws     = get_worksheet('prospectos_correo')
         estado = 'Encontrado' if email else 'Sin email'
         sheet_update_row(ws, row, {'Correo Email': email or '', 'Email Estado': estado})
-        invalidar(['prospectos'])
+        invalidar(['prospectos_correo'])
         return jsonify({'ok': True, 'email': email, 'estado': estado})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1369,7 +1413,7 @@ def api_correos_campana():
     template_key = d.get('template_key', '')
     if not template_key or template_key not in EMAIL_TEMPLATES:
         return jsonify({'error': 'template_key inválido'}), 400
-    prospectos = get_data('prospectos')
+    prospectos = get_data('prospectos_correo')
     if segmento_key:
         targets = [p for p in prospectos
                    if p.get('Correo Email')
