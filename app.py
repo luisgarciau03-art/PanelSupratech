@@ -340,75 +340,90 @@ def _relevancia(r):
     except:
         return 0
 
-def _buscar_negocios(gmaps, categoria, ciudad):
-    resultados = []
+# Place Details con datos de contacto (teléfono/sitio web) se factura en
+# el tier "Contact Data" de Google Places — es el costo dominante de la
+# importación. Limitamos cuántos candidatos por categoría llegan a pedir
+# Details, quedándonos con los de más reseñas (los más establecidos).
+MAX_DETALLES_POR_CATEGORIA = 8
+
+def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos):
     query = f'{categoria} en {ciudad} Mexico'
     resp  = gmaps.places(query=query)
+
+    # Filtrar y deduplicar usando solo datos del Text Search (sin costo
+    # adicional) antes de gastar en Place Details.
+    candidatos = []
     ids_vistos = set()
     for place in resp.get('results', []):
         pid = place.get('place_id', '')
         if pid in ids_vistos:
             continue
         ids_vistos.add(pid)
-        rating  = place.get('rating', 0) or 0
-        reviews = place.get('user_ratings_total', 0) or 0
-        if reviews < 100:
+        if (place.get('user_ratings_total', 0) or 0) < 100:
             continue
+        if place.get('name', '').strip().lower() in nombres_vistos:
+            continue
+        candidatos.append(place)
+
+    # Solo los más relevantes pasan a Place Details
+    candidatos.sort(key=lambda p: p.get('user_ratings_total', 0) or 0, reverse=True)
+    candidatos = candidatos[:MAX_DETALLES_POR_CATEGORIA]
+
+    resultados = []
+    for place in candidatos:
+        pid = place['place_id']
         det = gmaps.place(place_id=pid, fields=[
-            'name','formatted_phone_number','formatted_address',
-            'website','opening_hours','geometry','business_status','url'
+            'name', 'formatted_phone_number', 'formatted_address', 'website', 'url'
         ]).get('result', {})
         tel = det.get('formatted_phone_number', '')
         if not tel:
             continue
+        nombre = det.get('name', place.get('name', ''))
+        nombres_vistos.add(nombre.strip().lower())
         maps_url = det.get('url', f'https://www.google.com/maps/place/?q=place_id:{pid}')
         resultados.append({
-            'Nombre':       det.get('name', ''),
+            'Nombre':       nombre,
             'Ciudad':       ciudad,
             'Giro':         categoria,
             'Teléfono':     tel.replace(' ', '').replace('-', ''),
             'Dirección':    det.get('formatted_address', ''),
             'Sitio Web':    det.get('website', ''),
-            'Calificación': rating,
-            'Reseñas':      reviews,
+            'Calificación': place.get('rating', 0) or 0,
+            'Reseñas':      place.get('user_ratings_total', 0) or 0,
             'Maps Link':    maps_url,
             'Fecha':        datetime.now().strftime('%d/%m/%Y'),
         })
-    # Ordenar por relevancia descendente
     resultados.sort(key=_relevancia, reverse=True)
     return resultados
 
-def _exportar_a_prospectos(resultados, ciudad):
-    ws = get_worksheet('prospectos')
-    existing = ws.get_all_values()
-    nombres_existentes = {r[0].lower() for r in existing[1:] if r}
-    nuevos = [r for r in resultados if r['Nombre'].lower() not in nombres_existentes]
-    if nuevos:
-        rows = [[
-            r['Nombre'],
-            r['Nombre'],
-            r['Giro'],
-            r['Ciudad'],
-            r['Teléfono'],
-            '',              # WhatsApp
-            '',              # Empleados
-            'Por llamar',
-            'Filtro',        # Etapa inicial — obtener contacto del gerente
-            'Importador Maps',
-            r['Fecha'],
-            '',              # Notas
-            '',              # Nombre Gerente
-            '',              # Tel Directo
-            '',              # Correo Gerente
-            str(r['Calificación']),
-            str(r['Reseñas']),
-            r['Dirección'],
-            r.get('Sitio Web', ''),
-            r.get('Maps Link', ''),
-        ] for r in nuevos]
-        ws.append_rows(rows)
+def _exportar_a_prospectos(ws, resultados, ciudad):
+    if not resultados:
+        return 0
+    rows = [[
+        r['Nombre'],
+        r['Nombre'],
+        r['Giro'],
+        r['Ciudad'],
+        r['Teléfono'],
+        '',              # WhatsApp
+        '',              # Empleados
+        'Por llamar',
+        'Filtro',        # Etapa inicial — obtener contacto del gerente
+        'Importador Maps',
+        r['Fecha'],
+        '',              # Notas
+        '',              # Nombre Gerente
+        '',              # Tel Directo
+        '',              # Correo Gerente
+        str(r['Calificación']),
+        str(r['Reseñas']),
+        r['Dirección'],
+        r.get('Sitio Web', ''),
+        r.get('Maps Link', ''),
+    ] for r in resultados]
+    ws.append_rows(rows)
     invalidar(['prospectos'])
-    return len(nuevos)
+    return len(rows)
 
 def _registrar_importacion(estado, ciudad, nuevos, total_encontrados):
     try:
@@ -426,13 +441,16 @@ def _worker_importador(estado, ciudad):
     try:
         import googlemaps
         gmaps = googlemaps.Client(key=GMAPS_API_KEY)
+        ws = get_worksheet('prospectos')
+        existing = ws.get_all_values()
+        nombres_vistos = {r[0].strip().lower() for r in existing[1:] if r and r[0]}
         total = 0
         total_encontrados = 0
         for i, cat in enumerate(CATEGORIAS_IMPORTADOR):
             with _import_lock:
                 _import_job.update({'categoria': cat, 'progreso': int(i / len(CATEGORIAS_IMPORTADOR) * 100)})
-            res = _buscar_negocios(gmaps, cat, ciudad)
-            n   = _exportar_a_prospectos(res, ciudad)
+            res = _buscar_negocios(gmaps, cat, ciudad, nombres_vistos)
+            n   = _exportar_a_prospectos(ws, res, ciudad)
             total += n
             total_encontrados += len(res)
             with _import_lock:
