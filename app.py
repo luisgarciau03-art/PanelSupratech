@@ -32,6 +32,7 @@ SHEET_IDS = {
     'seguimiento':     os.environ.get('SEGUIMIENTO_SHEET_ID', _MASTER_SHEET),
     'mensajes':        os.environ.get('MENSAJES_SHEET_ID',    _MASTER_SHEET),
     'correos_log':     os.environ.get('CORREOS_SHEET_ID',     _MASTER_SHEET),
+    'importaciones':   os.environ.get('IMPORTACIONES_SHEET_ID', _MASTER_SHEET),
 }
 
 # Si prefieres un solo spreadsheet con múltiples hojas, pon el mismo ID en todos
@@ -44,6 +45,7 @@ SHEET_TABS = {
     'seguimiento':      os.environ.get('TAB_SEGUIMIENTO',      'SEGUIMIENTO'),
     'mensajes':         os.environ.get('TAB_MENSAJES',         'MENSAJES'),
     'correos_log':      os.environ.get('TAB_CORREOS',          'CORREOS LOG'),
+    'importaciones':    os.environ.get('TAB_IMPORTACIONES',    'IMPORTACIONES'),
 }
 
 IMGBB_API_KEY   = os.environ.get('IMGBB_API_KEY', '')
@@ -119,6 +121,7 @@ SHEET_HEADERS = {
                     'Cierre Demo', 'Follow-up WhatsApp', 'No Interesa - Cierre Amable'],
     'correos_log': ['Timestamp', 'Empresa', 'Email', 'Segmento', 'Template',
                     'Asunto', 'Estado', 'Notas'],
+    'importaciones': ['Fecha', 'Estado', 'Ciudad', 'Nuevos', 'Total Encontrados'],
 }
 
 def _init_headers(ws, key):
@@ -250,6 +253,7 @@ def get_prospecto_pendiente(skip=0, etapa='Filtro'):
 # ─────────────────────────────────────────────
 _import_job = {
     'status':    'idle',
+    'estado':    '',
     'ciudad':    '',
     'progreso':  0,
     'encontrados': 0,
@@ -258,6 +262,43 @@ _import_job = {
     'error':     None,
 }
 _import_lock = threading.Lock()
+
+# Ciudades comerciales/industriales relevantes por estado, para cubrir
+# sistemáticamente la importación sin repetir ni saltarse ninguna.
+CIUDADES_POR_ESTADO = {
+    'Aguascalientes':       ['Aguascalientes', 'Jesús María', 'Calvillo'],
+    'Baja California':      ['Tijuana', 'Mexicali', 'Ensenada', 'Tecate'],
+    'Baja California Sur':  ['La Paz', 'Los Cabos', 'Ciudad Constitución'],
+    'Campeche':             ['Campeche', 'Ciudad del Carmen', 'Champotón'],
+    'Chiapas':              ['Tuxtla Gutiérrez', 'Tapachula', 'San Cristóbal de las Casas', 'Comitán'],
+    'Chihuahua':            ['Chihuahua', 'Ciudad Juárez', 'Delicias', 'Cuauhtémoc'],
+    'Ciudad de México':     ['Ciudad de México'],
+    'Coahuila':             ['Saltillo', 'Torreón', 'Monclova', 'Piedras Negras'],
+    'Colima':               ['Colima', 'Manzanillo', 'Tecomán'],
+    'Durango':              ['Durango', 'Gómez Palacio', 'Lerdo'],
+    'Estado de México':     ['Toluca', 'Ecatepec', 'Naucalpan', 'Tlalnepantla', 'Cuautitlán Izcalli'],
+    'Guanajuato':           ['León', 'Irapuato', 'Celaya', 'Salamanca', 'Guanajuato'],
+    'Guerrero':             ['Acapulco', 'Chilpancingo', 'Iguala', 'Zihuatanejo'],
+    'Hidalgo':              ['Pachuca', 'Tulancingo', 'Tula de Allende', 'Tizayuca'],
+    'Jalisco':              ['Guadalajara', 'Zapopan', 'Tlaquepaque', 'Puerto Vallarta', 'Tlajomulco'],
+    'Michoacán':            ['Morelia', 'Uruapan', 'Zamora', 'Lázaro Cárdenas'],
+    'Morelos':              ['Cuernavaca', 'Cuautla', 'Jiutepec'],
+    'Nayarit':              ['Tepic', 'Bahía de Banderas', 'Santiago Ixcuintla'],
+    'Nuevo León':           ['Monterrey', 'Guadalupe', 'San Nicolás de los Garza', 'Apodaca', 'Santa Catarina'],
+    'Oaxaca':               ['Oaxaca de Juárez', 'Salina Cruz', 'Tuxtepec', 'Huajuapan de León'],
+    'Puebla':               ['Puebla', 'Tehuacán', 'San Martín Texmelucan', 'Atlixco'],
+    'Querétaro':            ['Querétaro', 'San Juan del Río', 'Corregidora', 'El Marqués'],
+    'Quintana Roo':         ['Cancún', 'Playa del Carmen', 'Chetumal', 'Cozumel'],
+    'San Luis Potosí':      ['San Luis Potosí', 'Soledad de Graciano Sánchez', 'Ciudad Valles', 'Matehuala'],
+    'Sinaloa':              ['Culiacán', 'Mazatlán', 'Los Mochis', 'Guasave'],
+    'Sonora':               ['Hermosillo', 'Ciudad Obregón', 'Nogales', 'Guaymas'],
+    'Tabasco':              ['Villahermosa', 'Cárdenas', 'Comalcalco'],
+    'Tamaulipas':           ['Reynosa', 'Matamoros', 'Nuevo Laredo', 'Tampico', 'Ciudad Victoria'],
+    'Tlaxcala':             ['Tlaxcala', 'Apizaco', 'Huamantla'],
+    'Veracruz':             ['Veracruz', 'Xalapa', 'Coatzacoalcos', 'Córdoba', 'Poza Rica'],
+    'Yucatán':              ['Mérida', 'Valladolid', 'Progreso', 'Tizimín'],
+    'Zacatecas':            ['Zacatecas', 'Fresnillo', 'Guadalupe'],
+}
 
 CATEGORIAS_IMPORTADOR = [
     'Ferreterías',
@@ -355,21 +396,35 @@ def _exportar_a_prospectos(resultados, ciudad):
     invalidar(['prospectos'])
     return len(nuevos)
 
-def _worker_importador(ciudad):
+def _registrar_importacion(estado, ciudad, nuevos, total_encontrados):
+    try:
+        ws = get_worksheet('importaciones')
+        ws.append_row([
+            datetime.now().strftime('%d/%m/%Y %H:%M'),
+            estado, ciudad, str(nuevos), str(total_encontrados),
+        ])
+        invalidar(['importaciones'])
+    except Exception:
+        pass
+
+def _worker_importador(estado, ciudad):
     global _import_job
     try:
         import googlemaps
         gmaps = googlemaps.Client(key=GMAPS_API_KEY)
         total = 0
+        total_encontrados = 0
         for i, cat in enumerate(CATEGORIAS_IMPORTADOR):
             with _import_lock:
                 _import_job.update({'categoria': cat, 'progreso': int(i / len(CATEGORIAS_IMPORTADOR) * 100)})
             res = _buscar_negocios(gmaps, cat, ciudad)
             n   = _exportar_a_prospectos(res, ciudad)
             total += n
+            total_encontrados += len(res)
             with _import_lock:
                 _import_job['encontrados'] = total
                 _import_job['log'].append(f'{cat}: {n} nuevos')
+        _registrar_importacion(estado, ciudad, total, total_encontrados)
         with _import_lock:
             _import_job.update({'status': 'done', 'progreso': 100})
     except Exception as e:
@@ -1139,21 +1194,53 @@ def api_importador_iniciar():
     with _import_lock:
         if _import_job['status'] == 'running':
             return jsonify({'error': 'Ya hay una importación en curso'}), 400
-        ciudad = (request.get_json() or {}).get('ciudad', '').strip()
-        if not ciudad:
-            return jsonify({'error': 'Ciudad requerida'}), 400
+        data   = request.get_json() or {}
+        estado = (data.get('estado') or '').strip()
+        ciudad = (data.get('ciudad') or '').strip()
+        if not estado or not ciudad:
+            return jsonify({'error': 'Estado y ciudad requeridos'}), 400
         _import_job = {
-            'status': 'running', 'ciudad': ciudad, 'categoria': '',
+            'status': 'running', 'estado': estado, 'ciudad': ciudad, 'categoria': '',
             'progreso': 0, 'encontrados': 0, 'descartados': 0,
             'log': [], 'error': None,
         }
-    threading.Thread(target=_worker_importador, args=(ciudad,), daemon=True).start()
+    threading.Thread(target=_worker_importador, args=(estado, ciudad), daemon=True).start()
     return jsonify({'ok': True})
 
 @app.route('/api/importador/estado')
 def api_importador_estado():
     with _import_lock:
         return jsonify(dict(_import_job))
+
+@app.route('/api/importador/checklist')
+def api_importador_checklist():
+    importaciones = get_data('importaciones')
+    hechas = {}
+    for r in importaciones:
+        key = (r.get('Estado', '').strip(), r.get('Ciudad', '').strip())
+        hechas[key] = {
+            'fecha':  r.get('Fecha', ''),
+            'nuevos': r.get('Nuevos', ''),
+            'total':  r.get('Total Encontrados', ''),
+        }
+    estados = []
+    for estado, ciudades in CIUDADES_POR_ESTADO.items():
+        lista = []
+        for ciudad in ciudades:
+            info = hechas.get((estado, ciudad))
+            lista.append({
+                'ciudad':    ciudad,
+                'importado': info is not None,
+                'fecha':     info['fecha']  if info else '',
+                'nuevos':    info['nuevos'] if info else '',
+            })
+        estados.append({
+            'estado':   estado,
+            'pendientes': sum(1 for c in lista if not c['importado']),
+            'total':    len(lista),
+            'ciudades': lista,
+        })
+    return jsonify({'estados': estados})
 
 # ─────────────────────────────────────────────
 # API — CORREOS

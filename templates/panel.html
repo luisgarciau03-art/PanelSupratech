@@ -367,6 +367,27 @@
       overflow-y: auto;
       margin-top: 10px;
     }
+    .imp-ciudades-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 320px;
+      overflow-y: auto;
+      margin-top: 4px;
+    }
+    .imp-ciudad-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #f8f9ff;
+      border-radius: 8px;
+      font-size: 0.84em;
+    }
+    .imp-ciudad-row strong { color: var(--navy); margin-right: 8px; }
+    .badge-importado { background: #ecfdf5; color: #059669; }
+    .badge-pendiente { background: #f3f4f6; color: #9ca3af; }
 
     /* ── MENSAJES ── */
     .mensajes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
@@ -629,17 +650,17 @@
 
   <!-- ─── IMPORTADOR ─── -->
   <div class="section" id="sec-importador">
-    <div class="import-card">
+    <div class="import-card" style="max-width:640px">
       <h2 style="font-size:1.1em;font-weight:700;margin-bottom:18px">🗺 Importar prospectos de Google Maps</h2>
       <p style="font-size:0.84em;color:#6b7280;margin-bottom:18px">
-        Busca distribuidoras por ciudad. Filtra por calificación y teléfono disponible.
-        Categorías: Ferreterías, Materiales de construcción, Abarrotes, Consumibles industriales.
+        Cobertura sistemática por estado y ciudad — sin repetir ni saltarse ninguna.
+        Categorías: Ferreterías, Materiales de construcción, Abarrotes, Consumibles industriales y más.
       </p>
       <div class="field" style="margin-bottom:14px">
-        <label>Ciudad objetivo</label>
-        <input type="text" id="imp-ciudad" placeholder="Guadalajara, Jalisco">
+        <label>Estado</label>
+        <select id="imp-estado" onchange="renderImportadorCiudades()"></select>
       </div>
-      <button class="btn btn-primary" onclick="iniciarImportacion()" id="btn-importar" style="width:100%">Buscar distribuidoras</button>
+      <div class="imp-ciudades-list" id="imp-ciudades-list"></div>
       <div id="imp-status" style="margin-top:16px;display:none">
         <div style="font-size:0.8em;color:#6b7280" id="imp-label">Buscando...</div>
         <div class="progress-bar"><div class="progress-fill" id="imp-bar" style="width:0%"></div></div>
@@ -879,6 +900,7 @@ async function loadSection(sec) {
     clientes:    loadClientes,
     mensajes:    loadMensajes,
     correos:     loadCorreos,
+    importador:  loadImportadorChecklist,
   };
   if (map[sec]) await map[sec]();
 }
@@ -1218,28 +1240,70 @@ async function guardarCliente() {
 
 // ─── IMPORTADOR ──────────────────────────────────
 let _importPoll = null;
+let _importChecklist = [];
 
-async function iniciarImportacion() {
-  const ciudad = document.getElementById('imp-ciudad').value.trim();
-  if (!ciudad) { alert('Ingresa una ciudad'); return; }
-  document.getElementById('btn-importar').disabled = true;
+async function loadImportadorChecklist() {
+  const d = await apiFetch('/api/importador/checklist');
+  _importChecklist = d.estados || [];
+  const sel = document.getElementById('imp-estado');
+  const prev = sel.value;
+  sel.innerHTML = _importChecklist.map(e =>
+    `<option value="${esc(e.estado)}">${esc(e.estado)} (${e.total - e.pendientes}/${e.total})</option>`
+  ).join('');
+  if (prev && _importChecklist.some(e => e.estado === prev)) sel.value = prev;
+  state.data.importador = true;
+  renderImportadorCiudades();
+}
+
+function renderImportadorCiudades() {
+  const estado = document.getElementById('imp-estado').value;
+  const info   = _importChecklist.find(e => e.estado === estado);
+  const cont   = document.getElementById('imp-ciudades-list');
+  if (!info) { cont.innerHTML = ''; return; }
+  cont.innerHTML = info.ciudades.map(c => `
+    <div class="imp-ciudad-row">
+      <div>
+        <strong>${esc(c.ciudad)}</strong>
+        ${c.importado
+          ? `<span class="badge badge-importado">✓ ${esc(c.fecha)} · ${esc(c.nuevos)} nuevos</span>`
+          : `<span class="badge badge-pendiente">Pendiente</span>`}
+      </div>
+      <button class="btn btn-primary btn-importar-ciudad" data-estado="${esc(estado)}" data-ciudad="${esc(c.ciudad)}"
+              onclick="iniciarImportacion(this.dataset.estado, this.dataset.ciudad)">
+        ${c.importado ? 'Reimportar' : 'Importar'}
+      </button>
+    </div>
+  `).join('');
+}
+
+async function iniciarImportacion(estado, ciudad) {
+  document.querySelectorAll('.btn-importar-ciudad').forEach(b => b.disabled = true);
   document.getElementById('imp-status').style.display = 'block';
   document.getElementById('imp-log').innerHTML = '';
-  const r = await apiFetch('/api/importador/iniciar', 'POST', { ciudad });
-  if (r.error) { alert(r.error); document.getElementById('btn-importar').disabled = false; return; }
+  document.getElementById('imp-label').textContent = `Buscando en ${ciudad}, ${estado}...`;
+  document.getElementById('imp-bar').style.width = '0%';
+  const r = await apiFetch('/api/importador/iniciar', 'POST', { estado, ciudad });
+  if (r.error) {
+    alert(r.error);
+    document.querySelectorAll('.btn-importar-ciudad').forEach(b => b.disabled = false);
+    return;
+  }
   _importPoll = setInterval(pollImportacion, 3000);
 }
 
 async function pollImportacion() {
   const d = await apiFetch('/api/importador/estado');
-  document.getElementById('imp-label').textContent = `${d.categoria || '...'} · ${d.encontrados} encontrados`;
+  document.getElementById('imp-label').textContent = `${d.ciudad}, ${d.estado} — ${d.categoria || '...'} · ${d.encontrados} encontrados`;
   document.getElementById('imp-bar').style.width   = d.progreso + '%';
   document.getElementById('imp-log').innerHTML = (d.log || []).map(l => `<div>${esc(l)}</div>`).join('');
   if (d.status === 'done' || d.status === 'error') {
     clearInterval(_importPoll);
-    document.getElementById('btn-importar').disabled = false;
+    document.querySelectorAll('.btn-importar-ciudad').forEach(b => b.disabled = false);
     document.getElementById('imp-label').textContent = d.error ? `Error: ${d.error}` : `✓ Importación completa — ${d.encontrados} nuevos prospectos`;
-    if (d.status === 'done') { state.data = {}; }
+    if (d.status === 'done') {
+      state.data = {};
+      await loadImportadorChecklist();
+    }
   }
 }
 
