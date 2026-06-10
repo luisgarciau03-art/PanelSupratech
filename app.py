@@ -329,9 +329,24 @@ CATEGORIAS_LLAMADAS = [
     'Centros de abasto y mayoreo',
 ]
 
-# Canal de Correo: lista independiente — arranca igual a Llamadas pero puede
-# ajustarse por separado sin afectar al canal de Llamadas.
-CATEGORIAS_CORREO = list(CATEGORIAS_LLAMADAS)
+# Canal de Correo: solo categorías cuyo grupo (ver GRUPOS_GIRO) cae en
+# _GIROS_EMAIL_FORMALES (Industrial, Construcción, Salud) — son las únicas
+# que _apto_email puede aceptar para un prospecto recién importado (frío).
+# Categorías fuera de estos grupos nunca generarían un prospecto apto para
+# campaña de email, así que no tiene sentido gastar Place Details en ellas.
+CATEGORIAS_CORREO = [
+    'Ferreterías',
+    'Tornillerías',
+    'Distribuidoras de herramientas',
+    'Distribuidoras de equipo de seguridad industrial',
+    'Distribuidoras de consumibles industriales',
+    'Distribuidoras de materiales de construcción',
+    'Distribuidoras de plásticos',
+    'Negocios de plásticos desechables mayoristas',
+    'Farmacias independientes',
+    'Distribuidoras farmacéuticas',
+    'Distribuidoras de productos veterinarios',
+]
 
 # Dos canales de prospección totalmente independientes: el importador de
 # Llamadas no beneficia al de Correo y viceversa — cada uno tiene su propia
@@ -343,12 +358,17 @@ IMPORT_CHANNELS = {
         'log_sheet':       'importaciones',
         'categorias':      CATEGORIAS_LLAMADAS,
         'campo_requerido': 'formatted_phone_number',  # debe tener teléfono
+        'min_resenas':     100,
     },
     'correo': {
         'sheet':           'prospectos_correo',
         'log_sheet':       'importaciones_correo',
         'categorias':      CATEGORIAS_CORREO,
         'campo_requerido': 'website',  # debe tener sitio web
+        # 300 reseñas = tamaño "mediano" (_get_tamano). Un prospecto frío
+        # solo es apto_email si es mediano/grande, así que filtrar por
+        # debajo de eso descarta candidatos que nunca recibirían campaña.
+        'min_resenas':     300,
     },
 }
 
@@ -381,7 +401,7 @@ def _relevancia(r):
 # Details, quedándonos con los de más reseñas (los más establecidos).
 MAX_DETALLES_POR_CATEGORIA = 8
 
-def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos, campo_requerido='formatted_phone_number'):
+def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos, campo_requerido='formatted_phone_number', min_resenas=100):
     query = f'{categoria} en {ciudad} Mexico'
     resp  = gmaps.places(query=query)
 
@@ -394,7 +414,7 @@ def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos, campo_requerido='
         if pid in ids_vistos:
             continue
         ids_vistos.add(pid)
-        if (place.get('user_ratings_total', 0) or 0) < 100:
+        if (place.get('user_ratings_total', 0) or 0) < min_resenas:
             continue
         if place.get('name', '').strip().lower() in nombres_vistos:
             continue
@@ -487,7 +507,7 @@ def _worker_importador(canal, estado, ciudad):
         for i, cat in enumerate(categorias):
             with lock:
                 job.update({'categoria': cat, 'progreso': int(i / len(categorias) * 100)})
-            res = _buscar_negocios(gmaps, cat, ciudad, nombres_vistos, cfg['campo_requerido'])
+            res = _buscar_negocios(gmaps, cat, ciudad, nombres_vistos, cfg['campo_requerido'], cfg['min_resenas'])
             n   = _exportar_a_prospectos(ws, res, ciudad, cfg['sheet'])
             total += n
             total_encontrados += len(res)
