@@ -1499,6 +1499,17 @@ def api_correos_campana():
         targets = [p for p in prospectos
                    if p.get('Correo Email') and p.get('Email Estado') != 'Enviado'
                    and get_segmento(p)['apto_email']]
+    # Deduplicar por email: distintos listados de Maps (ej. dos sucursales)
+    # pueden compartir el mismo correo de contacto — no enviar 2 veces.
+    vistos = set()
+    unicos = []
+    for p in targets:
+        email = p['Correo Email'].strip().lower()
+        if email in vistos:
+            continue
+        vistos.add(email)
+        unicos.append(p)
+    targets = unicos
     if not targets:
         return jsonify({'error': 'Sin prospectos con email para este segmento'}), 400
     with _campana_lock:
