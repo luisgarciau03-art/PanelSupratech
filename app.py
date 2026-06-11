@@ -695,9 +695,11 @@ EMAIL_TEMPLATES = {
 </ul>
 <p>¿Tienen 15 minutos esta semana para una demo sin compromisos?</p>
 <a class="cta" href="https://supratech.mx/demo">Agendar demo gratis</a>
-<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
-<small>Para no recibir más correos, responda "BAJA".</small></div>
-</div>""",
+</div>
+<a href="https://supratech.work" target="_blank" style="display:block;line-height:0">
+<img src="https://supratech.work/static/email/footer-banner.png" alt="Supratech - supratech.work" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0">
+</a>
+<div class="ftr" style="margin-top:0;border-top:none;text-align:center">Para no recibir más correos, responda "BAJA".</div>""",
     },
     'frio_construccion': {
         'nombre': 'Frío — Construcción',
@@ -710,9 +712,11 @@ EMAIL_TEMPLATES = {
 <p>Supratech resuelve exactamente eso: un sistema donde manejan compras, ventas, inventario y clientes. Sin hojas de cálculo ni información duplicada.</p>
 <a class="cta" href="https://supratech.mx/demo">Ver demo de 15 minutos</a>
 <p>¿Le interesaría conocer cómo funciona? Puedo mostrárselo esta semana.</p>
-<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
-<small>Para no recibir más correos, responda "BAJA".</small></div>
-</div>""",
+</div>
+<a href="https://supratech.work" target="_blank" style="display:block;line-height:0">
+<img src="https://supratech.work/static/email/footer-banner.png" alt="Supratech - supratech.work" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0">
+</a>
+<div class="ftr" style="margin-top:0;border-top:none;text-align:center">Para no recibir más correos, responda "BAJA".</div>""",
     },
     'frio_consumo': {
         'nombre': 'Frío — Consumo',
@@ -724,9 +728,11 @@ EMAIL_TEMPLATES = {
 <p>Para distribuidoras de productos de consumo, el reto es claro: manejar alta rotación, controlar la merma y asegurarse de que los pedidos diarios a proveedores sean exactos.</p>
 <p>Con Supratech pueden ver en segundos qué producto está por agotarse, qué clientes compran más y generar pedidos automáticos al proveedor — desde una sola pantalla.</p>
 <a class="cta" href="https://supratech.mx/demo">Solicitar demo gratuita</a>
-<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
-<small>Para no recibir más correos, responda "BAJA".</small></div>
-</div>""",
+</div>
+<a href="https://supratech.work" target="_blank" style="display:block;line-height:0">
+<img src="https://supratech.work/static/email/footer-banner.png" alt="Supratech - supratech.work" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0">
+</a>
+<div class="ftr" style="margin-top:0;border-top:none;text-align:center">Para no recibir más correos, responda "BAJA".</div>""",
     },
     'frio_salud': {
         'nombre': 'Frío — Salud',
@@ -738,9 +744,11 @@ EMAIL_TEMPLATES = {
 <p>En farmacias y distribuidoras farmacéuticas, el control de lotes y fechas de caducidad es crítico. Un error puede traducirse en devoluciones, sanciones o pérdida de clientes.</p>
 <p>Supratech ofrece control de inventario con trazabilidad por lote, alertas de caducidad y reportes de movimiento que facilitan cualquier auditoría.</p>
 <a class="cta" href="https://supratech.mx/demo">Ver demo — 15 minutos</a>
-<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
-<small>Para no recibir más correos, responda "BAJA".</small></div>
-</div>""",
+</div>
+<a href="https://supratech.work" target="_blank" style="display:block;line-height:0">
+<img src="https://supratech.work/static/email/footer-banner.png" alt="Supratech - supratech.work" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0">
+</a>
+<div class="ftr" style="margin-top:0;border-top:none;text-align:center">Para no recibir más correos, responda "BAJA".</div>""",
     },
     'frio_automotriz': {
         'nombre': 'Frío — Automotriz',
@@ -752,9 +760,11 @@ EMAIL_TEMPLATES = {
 <p>El reto más frecuente en el sector: miles de referencias, compatibilidades por año/marca/modelo y clientes que necesitan respuesta inmediata.</p>
 <p>Con Supratech buscan refacciones en segundos, ven disponibilidad en tiempo real y generan cotizaciones al momento. Menos tiempo buscando, más ventas cerradas.</p>
 <a class="cta" href="https://supratech.mx/demo">Agendar demo gratuita</a>
-<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
-<small>Para no recibir más correos, responda "BAJA".</small></div>
-</div>""",
+</div>
+<a href="https://supratech.work" target="_blank" style="display:block;line-height:0">
+<img src="https://supratech.work/static/email/footer-banner.png" alt="Supratech - supratech.work" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0">
+</a>
+<div class="ftr" style="margin-top:0;border-top:none;text-align:center">Para no recibir más correos, responda "BAJA".</div>""",
     },
     'tibio': {
         'nombre': 'Tibio — Seguimiento',
@@ -767,9 +777,11 @@ EMAIL_TEMPLATES = {
 <p>Si gustan, puedo agendar una demo de 15 minutos en el horario que más les convenga — sin compromisos y completamente gratuita.</p>
 <a class="cta" href="https://supratech.mx/demo">Agendar demo</a>
 <p>Quedo al pendiente. Un saludo del equipo Supratech.</p>
-<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
-<small>Para no recibir más correos, responda "BAJA".</small></div>
-</div>""",
+</div>
+<a href="https://supratech.work" target="_blank" style="display:block;line-height:0">
+<img src="https://supratech.work/static/email/footer-banner.png" alt="Supratech - supratech.work" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0">
+</a>
+<div class="ftr" style="margin-top:0;border-top:none;text-align:center">Para no recibir más correos, responda "BAJA".</div>""",
     },
     'caliente': {
         'nombre': 'Caliente — Demo confirmada',
@@ -787,8 +799,10 @@ EMAIL_TEMPLATES = {
 </ul>
 <p>Si antes de la demo quieren compartirnos contexto (número de SKUs, proveedores, sistema actual), pueden responder directamente a este correo — nos ayuda a personalizar la presentación.</p>
 <p>¡Nos vemos pronto!</p>
-<div class="ftr">Supratech · Software para distribuidoras mexicanas</div>
-</div>""",
+</div>
+<a href="https://supratech.work" target="_blank" style="display:block;line-height:0">
+<img src="https://supratech.work/static/email/footer-banner.png" alt="Supratech - supratech.work" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0">
+</a>""",
     },
     'frio_general': {
         'nombre': 'Frío — General',
@@ -800,9 +814,11 @@ EMAIL_TEMPLATES = {
 <p>Supratech es un software diseñado para distribuidoras mexicanas de 5 a 50 empleados: control de inventario, gestión de pedidos a proveedores y visibilidad del negocio desde cualquier dispositivo.</p>
 <p>¿Tendrían 15 minutos esta semana para una demo? Sin compromiso y completamente gratis.</p>
 <a class="cta" href="https://supratech.mx/demo">Solicitar demo</a>
-<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
-<small>Para no recibir más correos, responda "BAJA".</small></div>
-</div>""",
+</div>
+<a href="https://supratech.work" target="_blank" style="display:block;line-height:0">
+<img src="https://supratech.work/static/email/footer-banner.png" alt="Supratech - supratech.work" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0">
+</a>
+<div class="ftr" style="margin-top:0;border-top:none;text-align:center">Para no recibir más correos, responda "BAJA".</div>""",
     },
 }
 
