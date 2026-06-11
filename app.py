@@ -327,13 +327,25 @@ CATEGORIAS_LLAMADAS = [
     'Distribuidoras de productos agropecuarios',
     'Distribuidoras de electrónica y cómputo',
     'Centros de abasto y mayoreo',
+    'Supermercados independientes',
+    'Tiendas de conveniencia',
+    'Vinaterías y licorerías',
+    'Mueblerías',
+    'Tiendas de electrónica y celulares',
+    'Boutiques de ropa y calzado',
+    'Jugueterías',
+    'Tiendas de regalos y decoración',
+    'Tlapalerías',
+    'Ópticas',
+    'Tiendas de mascotas',
+    'Perfumerías',
 ]
 
 # Canal de Correo: solo categorías cuyo grupo (ver GRUPOS_GIRO) cae en
-# _GIROS_EMAIL_FORMALES (Industrial, Construcción, Salud) — son las únicas
-# que _apto_email puede aceptar para un prospecto recién importado (frío).
-# Categorías fuera de estos grupos nunca generarían un prospecto apto para
-# campaña de email, así que no tiene sentido gastar Place Details en ellas.
+# _GIROS_EMAIL_FORMALES — son las únicas que _apto_email puede aceptar para
+# un prospecto recién importado (frío). Categorías fuera de estos grupos
+# nunca generarían un prospecto apto para campaña de email, así que no tiene
+# sentido gastar Place Details en ellas.
 CATEGORIAS_CORREO = [
     'Ferreterías',
     'Tornillerías',
@@ -346,6 +358,18 @@ CATEGORIAS_CORREO = [
     'Farmacias independientes',
     'Distribuidoras farmacéuticas',
     'Distribuidoras de productos veterinarios',
+    'Supermercados independientes',
+    'Tiendas de conveniencia',
+    'Vinaterías y licorerías',
+    'Mueblerías',
+    'Tiendas de electrónica y celulares',
+    'Boutiques de ropa y calzado',
+    'Jugueterías',
+    'Tiendas de regalos y decoración',
+    'Tlapalerías',
+    'Ópticas',
+    'Tiendas de mascotas',
+    'Perfumerías',
 ]
 
 # Dos canales de prospección totalmente independientes: el importador de
@@ -367,8 +391,9 @@ IMPORT_CHANNELS = {
         'campo_requerido': 'website',  # debe tener sitio web
         # Las distribuidoras B2B rara vez acumulan muchas reseñas en Google
         # (no son negocios de cara al consumidor) — 300 dejaba casi todo
-        # afuera. 100 iguala el umbral de Llamadas.
-        'min_resenas':     100,
+        # afuera. 200 es un punto medio tras agregar categorías de Retail
+        # (supers, tiendas) que sí acumulan reseñas de consumidor final.
+        'min_resenas':     200,
     },
 }
 
@@ -537,6 +562,11 @@ GRUPOS_GIRO = {
     'Salud':        ['Farmacias independientes', 'Distribuidoras farmacéuticas',
                      'Distribuidoras de productos veterinarios'],
     'Automotriz':   ['Refaccionarias autopartes', 'Mayoristas'],
+    'Retail':       ['Supermercados independientes', 'Tiendas de conveniencia',
+                     'Vinaterías y licorerías', 'Mueblerías',
+                     'Tiendas de electrónica y celulares', 'Boutiques de ropa y calzado',
+                     'Jugueterías', 'Tiendas de regalos y decoración', 'Tlapalerías',
+                     'Ópticas', 'Tiendas de mascotas', 'Perfumerías'],
 }
 
 _GIRO_TO_GRUPO = {
@@ -567,7 +597,7 @@ def _get_temperatura(etapa: str, estado: str) -> str:
 # Giros con cultura de correo más formal (administración revisa email,
 # cotizaciones/facturas por correo). Fuera de estos, WhatsApp/llamada
 # rinde más que el correo frío.
-_GIROS_EMAIL_FORMALES = {'Industrial', 'Construcción', 'Salud'}
+_GIROS_EMAIL_FORMALES = {'Industrial', 'Construcción', 'Salud', 'Retail'}
 
 def _apto_email(grupo: str, tamano: str, temperatura: str, sitio_web: str) -> bool:
     if not (sitio_web or '').strip():
@@ -750,6 +780,7 @@ _GRUPO_TO_TEMPLATE = {
     'Consumo':      'frio_consumo',
     'Salud':        'frio_salud',
     'Automotriz':   'frio_automotriz',
+    'Retail':       'frio_consumo',
 }
 
 def get_template_key(p: dict) -> str:
