@@ -1385,6 +1385,27 @@ let _enrichPoll  = null;
 let _campanaPoll = null;
 let _currentCampana = null;
 
+// Borrador precargado del correo personalizado — el usuario puede editarlo
+// antes de enviar. {empresa}/{ciudad}/{nombre_saludo} se sustituyen por
+// prospecto al momento del envío.
+const CP_DEFAULT_ASUNTO = '{empresa}: ¿cómo manejan hoy su inventario y pedidos?';
+const CP_DEFAULT_CUERPO = `Hola{nombre_saludo},
+
+Le escribo de parte de Supratech. Vimos a {empresa} en {ciudad} y nos gustaría platicarles sobre cómo ayudamos a negocios como el suyo.
+
+Muchas distribuidoras y comercios manejan su inventario, pedidos y clientes en Excel o de memoria — lo que provoca faltantes, errores y tiempo perdido todos los días.
+
+Supratech es un sistema sencillo donde pueden ver su inventario en tiempo real, generar pedidos a proveedores en segundos y controlar ventas desde el celular, sin instalar nada complicado.
+
+¿Tendrían 15 minutos esta semana para una demo gratuita y sin compromiso?
+
+Pueden responder directamente a este correo o agendar aquí: https://supratech.mx/demo
+
+Saludos,
+Equipo Supratech
+
+Para no recibir más correos, responda "BAJA".`;
+
 async function loadCorreos() {
   const d = await apiFetch('/api/correos/stats');
   if (d.error) return;
@@ -1400,7 +1421,15 @@ async function loadCorreos() {
 
   renderSegmentos(d.segmentos || {});
   renderDestinos(d.segmentos || {}, d.aptos_con_email || 0);
+  precargarCorreoPersonalizado();
   loadCorreosLog();
+}
+
+function precargarCorreoPersonalizado() {
+  const elAsunto = document.getElementById('cp-asunto');
+  const elCuerpo = document.getElementById('cp-cuerpo');
+  if (elAsunto && !elAsunto.value) elAsunto.value = CP_DEFAULT_ASUNTO;
+  if (elCuerpo && !elCuerpo.value) elCuerpo.value = CP_DEFAULT_CUERPO;
 }
 
 function renderDestinos(segmentos, aptosConEmail) {
