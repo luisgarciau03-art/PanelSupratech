@@ -1525,18 +1525,29 @@ def api_correos_campana():
     if not template_key or template_key not in EMAIL_TEMPLATES:
         return jsonify({'error': 'template_key inválido'}), 400
     prospectos = get_data('prospectos_correo')
+    # Distintos listados de Maps (ej. dos sucursales) pueden compartir el
+    # mismo correo de contacto. Si ESE correo ya recibió un envío en
+    # cualquier fila/campaña previa, no se vuelve a contactar — sin importar
+    # si la fila duplicada en particular sigue marcada como pendiente.
+    enviados_emails = {
+        p['Correo Email'].strip().lower()
+        for p in prospectos
+        if p.get('Email Estado') == 'Enviado' and p.get('Correo Email')
+    }
     if segmento_key:
         targets = [p for p in prospectos
                    if p.get('Correo Email')
                    and p.get('Email Estado') != 'Enviado'
+                   and p['Correo Email'].strip().lower() not in enviados_emails
                    and get_segmento_key(p) == segmento_key
                    and get_segmento(p)['apto_email']]
     else:
         targets = [p for p in prospectos
                    if p.get('Correo Email') and p.get('Email Estado') != 'Enviado'
+                   and p['Correo Email'].strip().lower() not in enviados_emails
                    and get_segmento(p)['apto_email']]
-    # Deduplicar por email: distintos listados de Maps (ej. dos sucursales)
-    # pueden compartir el mismo correo de contacto — no enviar 2 veces.
+    # Deduplicar por email dentro de este mismo envío (mismo motivo: ramas
+    # distintas comparten correo y no deben recibir 2 veces en un solo run).
     vistos = set()
     unicos = []
     for p in targets:
