@@ -1388,23 +1388,22 @@ let _currentCampana = null;
 // Borrador precargado del correo personalizado — el usuario puede editarlo
 // antes de enviar. {empresa}/{ciudad}/{nombre_saludo} se sustituyen por
 // prospecto al momento del envío.
-const CP_DEFAULT_ASUNTO = '{empresa}: ¿cómo manejan hoy su inventario y pedidos?';
+const CP_DEFAULT_ASUNTO = '{empresa}: el sistema que hace tu negocio 100% automático';
 const CP_DEFAULT_CUERPO = `Hola{nombre_saludo},
 
-Le escribo de parte de Supratech. Vimos a {empresa} en {ciudad} y nos gustaría platicarles sobre cómo ayudamos a negocios como el suyo.
+Te escribimos para presentarte Supratech: un sistema 100% automático que se encarga de las tareas que normalmente le quitan tiempo a tu equipo en {empresa}, todos los días, sin que nadie tenga que operarlo.
 
-Muchas distribuidoras y comercios manejan su inventario, pedidos y clientes en Excel o de memoria — lo que provoca faltantes, errores y tiempo perdido todos los días.
+Esto es lo que Supratech hace por ti, 100% automático:
 
-Supratech es un sistema sencillo donde pueden ver su inventario en tiempo real, generar pedidos a proveedores en segundos y controlar ventas desde el celular, sin instalar nada complicado.
+🛒 Órdenes de compra automáticas: el sistema detecta qué necesitas reabastecer y genera la orden por ti, sin revisar inventario a mano.
 
-¿Tendrían 15 minutos esta semana para una demo gratuita y sin compromiso?
+🏷️ Descuentos automáticos: calcula y aplica los descuentos y márgenes óptimos según cada producto y cliente, sin errores ni hojas de cálculo.
 
-Pueden responder directamente a este correo o agendar aquí: https://supratech.mx/demo
+📦 Stock insano automático: detecta el inventario muerto o sobrante antes de que se convierta en pérdida, sin reportes manuales.
 
-Saludos,
-Equipo Supratech
+Todo esto desde $399 MXN/mes, con onboarding gratis (configuración inicial y capacitación de tu equipo incluidas).
 
-Para no recibir más correos, responda "BAJA".`;
+¿Te interesa un video de 2 minutos para ver cómo funciona en {empresa}? Responde este correo y te lo mandamos.`;
 
 async function loadCorreos() {
   const d = await apiFetch('/api/correos/stats');

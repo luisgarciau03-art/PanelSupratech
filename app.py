@@ -861,9 +861,11 @@ def render_custom_email(subject_raw: str, body_raw: str, p: dict) -> dict:
     body_html = _CSS + f"""<div class="wrap">
 <div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
 {parrafos}
-<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
-<small>Para no recibir más correos, responda "BAJA".</small></div>
-</div>"""
+</div>
+<a href="https://supratech.work" target="_blank" style="display:block;line-height:0">
+<img src="https://supratech.work/static/email/footer-banner.png" alt="Supratech - supratech.work" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0">
+</a>
+<div class="ftr" style="margin-top:0;border-top:none;text-align:center">Para no recibir más correos, responda "BAJA".</div>"""
     return {'subject': subject, 'html': body_html}
 
 # ─────────────────────────────────────────────
