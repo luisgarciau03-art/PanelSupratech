@@ -8,7 +8,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import gspread
 from google.oauth2.service_account import Credentials
-import os, json, time, threading, secrets, traceback, requests
+import os, json, time, threading, secrets, traceback, requests, html
 from datetime import datetime, timedelta
 from collections import Counter, defaultdict
 
@@ -839,6 +839,33 @@ def render_email(template_key: str, p: dict) -> dict:
 
     return {'subject': apply(tpl['subject']), 'html': apply(tpl['html'])}
 
+def render_custom_email(subject_raw: str, body_raw: str, p: dict) -> dict:
+    """Renderiza un correo redactado a mano desde el panel. El cuerpo es
+    texto plano: cada línea no vacía se vuelve un párrafo, envuelto en el
+    mismo estilo de marca que las plantillas predefinidas."""
+    gerente = p.get('Nombre Gerente', '').strip()
+    nombre_saludo = f' {gerente}' if gerente else ''
+    empresa = p.get('Empresa', p.get('Nombre', 'estimado negocio'))
+    ciudad  = p.get('Ciudad', 'su ciudad')
+
+    def apply(s):
+        return (s.replace('{empresa}', empresa)
+                 .replace('{ciudad}', ciudad)
+                 .replace('{nombre_saludo}', nombre_saludo))
+
+    subject = apply(subject_raw)
+    parrafos = ''.join(
+        f'<p>{html.escape(apply(linea))}</p>'
+        for linea in body_raw.splitlines() if linea.strip()
+    )
+    body_html = _CSS + f"""<div class="wrap">
+<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+{parrafos}
+<div class="ftr">Supratech · Software para distribuidoras mexicanas<br>
+<small>Para no recibir más correos, responda "BAJA".</small></div>
+</div>"""
+    return {'subject': subject, 'html': body_html}
+
 # ─────────────────────────────────────────────
 # CORREOS — ENVÍO VIA CLOUDFLARE WORKER
 # ─────────────────────────────────────────────
@@ -909,7 +936,7 @@ _campana_job  = {'status': 'idle', 'total': 0, 'enviados': 0,
                  'errores': 0, 'log': [], 'error': None}
 _campana_lock = threading.Lock()
 
-def _worker_campana(targets: list, template_key: str):
+def _worker_campana(targets: list, template_key: str, custom: dict | None = None):
     global _campana_job
     try:
         ws_prosp = get_worksheet('prospectos_correo')
@@ -918,8 +945,11 @@ def _worker_campana(targets: list, template_key: str):
             email = p.get('Correo Email', '').strip()
             if not email:
                 continue
-            seg      = get_segmento(p)
-            rendered = render_email(template_key, p)
+            seg = get_segmento(p)
+            if custom:
+                rendered = render_custom_email(custom['subject'], custom['body'], p)
+            else:
+                rendered = render_email(template_key, p)
             ok, err  = send_email(email, rendered['subject'], rendered['html'])
             ts       = datetime.now().strftime('%Y-%m-%d %H:%M')
             estado   = 'Enviado' if ok else 'Error'
@@ -1519,10 +1549,16 @@ def api_correos_campana():
     with _campana_lock:
         if _campana_job['status'] == 'running':
             return jsonify({'error': 'Ya hay una campaña en curso'}), 400
-    d            = request.get_json() or {}
-    segmento_key = d.get('segmento_key', '')
-    template_key = d.get('template_key', '')
-    if not template_key or template_key not in EMAIL_TEMPLATES:
+    d              = request.get_json() or {}
+    segmento_key   = d.get('segmento_key', '')
+    template_key   = d.get('template_key', '')
+    custom_subject = (d.get('custom_subject') or '').strip()
+    custom_body    = (d.get('custom_body') or '').strip()
+    custom = None
+    if custom_subject and custom_body:
+        custom = {'subject': custom_subject, 'body': custom_body}
+        template_key = 'personalizado'
+    elif not template_key or template_key not in EMAIL_TEMPLATES:
         return jsonify({'error': 'template_key inválido'}), 400
     prospectos = get_data('prospectos_correo')
     # Distintos listados de Maps (ej. dos sucursales) pueden compartir el
@@ -1563,7 +1599,7 @@ def api_correos_campana():
         _campana_job = {'status': 'running', 'total': len(targets),
                         'enviados': 0, 'errores': 0, 'log': [], 'error': None}
     threading.Thread(target=_worker_campana,
-                     args=(targets, template_key), daemon=True).start()
+                     args=(targets, template_key, custom), daemon=True).start()
     return jsonify({'ok': True, 'total': len(targets)})
 
 @app.route('/api/correos/estado-campana')
