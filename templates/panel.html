@@ -1574,7 +1574,14 @@ function abrirCampanaPersonalizada() {
       <div style="font-size:0.78em;color:#6b7280;margin-bottom:4px">Asunto</div>
       <div style="font-weight:600;font-size:0.9em;margin-bottom:10px">${esc(asunto)}</div>
       <div style="font-size:0.78em;color:#6b7280;margin-bottom:4px">Cuerpo</div>
-      <div style="font-size:0.85em;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;background:#fff">${parrafosPreview}</div>
+      <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff">
+        <div style="padding:16px 16px 0 16px;border-bottom:3px solid #4361ee;padding-bottom:14px;margin-bottom:14px">
+          <img src="https://supratech.work/static/email/logo-header.png" alt="Supratech" width="140" style="display:block;height:auto;border:0;margin-bottom:6px">
+          <div style="font-size:0.78em;color:#8d99ae">Software para distribuidoras</div>
+        </div>
+        <div style="padding:0 16px;font-size:0.85em">${parrafosPreview}</div>
+        <img src="https://supratech.work/static/email/footer-banner.png" alt="Supratech - supratech.work" style="display:block;width:100%;height:auto;border:0;margin-top:14px">
+      </div>
     </div>
     <div style="font-size:0.81em;color:#92400e;background:#fef3c7;padding:10px 14px;border-radius:8px">
       ⚠️ Se enviará este correo a cada prospecto del segmento elegido. Los prospectos con estado "Enviado" no serán contactados de nuevo.
