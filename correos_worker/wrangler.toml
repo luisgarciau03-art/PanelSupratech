@@ -2,6 +2,10 @@ name            = "supratech-correos"
 main            = "index.js"
 compatibility_date = "2025-01-01"
 
+[vars]
+FROM_EMAIL = "ventas@supratech.work"
+FROM_NAME  = "Supratech"
+
 # ─────────────────────────────────────────────────────────────
 # Variables de entorno — configurar en Cloudflare Dashboard
 # Workers & Pages → supratech-correos → Settings → Variables and Secrets

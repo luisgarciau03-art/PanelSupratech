@@ -667,7 +667,6 @@ _CSS = """<style>
 body{font-family:Arial,sans-serif;color:#2b2d42;line-height:1.65;max-width:600px;margin:0 auto;padding:0}
 .wrap{padding:32px 28px}
 .hdr{border-bottom:3px solid #4361ee;padding-bottom:14px;margin-bottom:22px}
-.brand{font-size:1.25em;font-weight:700;color:#4361ee}
 .sub{font-size:0.78em;color:#8d99ae;margin-top:2px}
 p{margin:0 0 13px}
 ul{margin:0 0 14px;padding-left:20px}
@@ -683,7 +682,7 @@ EMAIL_TEMPLATES = {
         'nombre': 'Frío — Industrial',
         'subject': '¿Cómo controlan el inventario en {empresa}?',
         'html': _CSS + """<div class="wrap">
-<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<div class="hdr"><img src="https://supratech.work/static/email/logo-header.png" alt="Supratech" width="160" style="display:block;height:auto;border:0;margin-bottom:6px"><div class="sub">Software para distribuidoras</div></div>
 <p>Hola{nombre_saludo},</p>
 <p>Vi que <strong>{empresa}</strong>, en {ciudad}, tiene una sólida presencia en el mercado industrial. Me pongo en contacto desde Supratech porque trabajamos con distribuidoras del mismo giro.</p>
 <p>El reto más frecuente que nos cuentan es el <strong>control de inventario</strong>: saber qué entra, qué sale y qué necesita reordenar — sin depender de Excel ni de memoria.</p>
@@ -705,7 +704,7 @@ EMAIL_TEMPLATES = {
         'nombre': 'Frío — Construcción',
         'subject': '{empresa}: ¿cuántos proveedores manejan sin un sistema centralizado?',
         'html': _CSS + """<div class="wrap">
-<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<div class="hdr"><img src="https://supratech.work/static/email/logo-header.png" alt="Supratech" width="160" style="display:block;height:auto;border:0;margin-bottom:6px"><div class="sub">Software para distribuidoras</div></div>
 <p>Hola{nombre_saludo},</p>
 <p>Encontramos a <strong>{empresa}</strong> en {ciudad} y nos llamó la atención su presencia en el mercado de materiales de construcción.</p>
 <p>En distribuidoras de materiales, el reto habitual es coordinar compras a múltiples proveedores, dar cotizaciones rápidas y mantener el inventario actualizado — todo al mismo tiempo.</p>
@@ -722,7 +721,7 @@ EMAIL_TEMPLATES = {
         'nombre': 'Frío — Consumo',
         'subject': 'Control de inventario para distribuidoras como {empresa}',
         'html': _CSS + """<div class="wrap">
-<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<div class="hdr"><img src="https://supratech.work/static/email/logo-header.png" alt="Supratech" width="160" style="display:block;height:auto;border:0;margin-bottom:6px"><div class="sub">Software para distribuidoras</div></div>
 <p>Hola{nombre_saludo},</p>
 <p>Me pongo en contacto desde Supratech. Encontramos a <strong>{empresa}</strong> en {ciudad} y creemos que podemos ayudarles.</p>
 <p>Para distribuidoras de productos de consumo, el reto es claro: manejar alta rotación, controlar la merma y asegurarse de que los pedidos diarios a proveedores sean exactos.</p>
@@ -738,7 +737,7 @@ EMAIL_TEMPLATES = {
         'nombre': 'Frío — Salud',
         'subject': 'Trazabilidad y control de lotes para {empresa}',
         'html': _CSS + """<div class="wrap">
-<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<div class="hdr"><img src="https://supratech.work/static/email/logo-header.png" alt="Supratech" width="160" style="display:block;height:auto;border:0;margin-bottom:6px"><div class="sub">Software para distribuidoras</div></div>
 <p>Hola{nombre_saludo},</p>
 <p>Le escribo desde Supratech. Encontramos a <strong>{empresa}</strong> en {ciudad} y quería presentarles nuestra solución para el sector salud.</p>
 <p>En farmacias y distribuidoras farmacéuticas, el control de lotes y fechas de caducidad es crítico. Un error puede traducirse en devoluciones, sanciones o pérdida de clientes.</p>
@@ -754,7 +753,7 @@ EMAIL_TEMPLATES = {
         'nombre': 'Frío — Automotriz',
         'subject': '¿Cuántas referencias maneja {empresa}? Supratech las organiza',
         'html': _CSS + """<div class="wrap">
-<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<div class="hdr"><img src="https://supratech.work/static/email/logo-header.png" alt="Supratech" width="160" style="display:block;height:auto;border:0;margin-bottom:6px"><div class="sub">Software para distribuidoras</div></div>
 <p>Hola{nombre_saludo},</p>
 <p>Me comunico desde Supratech. Vi que <strong>{empresa}</strong> opera en {ciudad} — nos especializamos en software para refaccionarias y distribuidoras automotrices.</p>
 <p>El reto más frecuente en el sector: miles de referencias, compatibilidades por año/marca/modelo y clientes que necesitan respuesta inmediata.</p>
@@ -770,7 +769,7 @@ EMAIL_TEMPLATES = {
         'nombre': 'Tibio — Seguimiento',
         'subject': 'Seguimiento — Supratech y {empresa}',
         'html': _CSS + """<div class="wrap">
-<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<div class="hdr"><img src="https://supratech.work/static/email/logo-header.png" alt="Supratech" width="160" style="display:block;height:auto;border:0;margin-bottom:6px"><div class="sub">Software para distribuidoras</div></div>
 <p>Hola{nombre_saludo},</p>
 <p>Hace unos días intenté comunicarme con <strong>{empresa}</strong> en {ciudad} para presentarles Supratech — el software de operaciones para distribuidoras mexicanas.</p>
 <p>Quería hacer un seguimiento por si encontraron un momento. Entiendo que el día a día de una distribuidora es muy ocupado.</p>
@@ -787,7 +786,7 @@ EMAIL_TEMPLATES = {
         'nombre': 'Caliente — Demo confirmada',
         'subject': 'Confirmación de demo: Supratech × {empresa}',
         'html': _CSS + """<div class="wrap">
-<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<div class="hdr"><img src="https://supratech.work/static/email/logo-header.png" alt="Supratech" width="160" style="display:block;height:auto;border:0;margin-bottom:6px"><div class="sub">Software para distribuidoras</div></div>
 <p>Hola{nombre_saludo},</p>
 <p>Muchas gracias por confirmar su interés en Supratech. Nos da mucho gusto la oportunidad de mostrarles cómo podemos ayudar a <strong>{empresa}</strong>.</p>
 <p>En la demo les mostraremos:</p>
@@ -808,7 +807,7 @@ EMAIL_TEMPLATES = {
         'nombre': 'Frío — General',
         'subject': '¿Cómo manejan los pedidos en {empresa}?',
         'html': _CSS + """<div class="wrap">
-<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<div class="hdr"><img src="https://supratech.work/static/email/logo-header.png" alt="Supratech" width="160" style="display:block;height:auto;border:0;margin-bottom:6px"><div class="sub">Software para distribuidoras</div></div>
 <p>Hola{nombre_saludo},</p>
 <p>Me pongo en contacto desde Supratech. Encontramos a <strong>{empresa}</strong> en {ciudad} y quería presentarles brevemente lo que hacemos.</p>
 <p>Supratech es un software diseñado para distribuidoras mexicanas de 5 a 50 empleados: control de inventario, gestión de pedidos a proveedores y visibilidad del negocio desde cualquier dispositivo.</p>
@@ -875,7 +874,7 @@ def render_custom_email(subject_raw: str, body_raw: str, p: dict) -> dict:
         for linea in body_raw.splitlines() if linea.strip()
     )
     body_html = _CSS + f"""<div class="wrap">
-<div class="hdr"><div class="brand">Supratech</div><div class="sub">Software para distribuidoras</div></div>
+<div class="hdr"><img src="https://supratech.work/static/email/logo-header.png" alt="Supratech" width="160" style="display:block;height:auto;border:0;margin-bottom:6px"><div class="sub">Software para distribuidoras</div></div>
 {parrafos}
 </div>
 <a href="https://supratech.work" target="_blank" style="display:block;line-height:0">
