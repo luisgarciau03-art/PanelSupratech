@@ -24,7 +24,15 @@ _SKIP_DOMAINS = {
 _CONTACT_PATHS = [
     '/contacto', '/contactanos', '/contactanos.html', '/contacto.html',
     '/contact', '/contact-us', '/about', '/nosotros', '/ayuda',
+    # El aviso de privacidad es obligatorio por ley en México (LFPDPPP) y
+    # casi siempre incluye un correo de contacto del responsable de datos.
+    '/aviso-de-privacidad', '/aviso-privacidad', '/politica-de-privacidad',
+    '/politica-privacidad', '/privacidad', '/quienes-somos',
 ]
+
+# Palabras clave para detectar links de contacto/privacidad en la portada,
+# por si el sitio usa una ruta no contemplada en _CONTACT_PATHS.
+_LINK_KEYWORDS = ('contacto', 'contact', 'privacidad', 'privacy', 'aviso')
 
 _HEADERS = {
     'User-Agent': (
@@ -52,15 +60,29 @@ def extract_email_from_website(url: str, timeout: int = 8) -> str | None:
     base_domain = urlparse(url).netloc.lower().replace('www.', '')
 
     # 1. Página principal
-    email = _scrape_page(url, base_domain, timeout)
-    if email:
-        return email
+    home_html = _fetch(url, timeout)
+    if home_html:
+        email = _parse_emails(home_html, base_domain)
+        if email:
+            return email
+        candidatos = _find_contact_links(home_html, url, base_domain)
+    else:
+        candidatos = []
 
-    # 2. Páginas de contacto
-    for path in _CONTACT_PATHS:
+    # 2. Links de contacto/privacidad detectados en la portada, luego rutas
+    # comunes (aviso de privacidad, contacto, etc.)
+    candidatos += [urljoin(url, path) for path in _CONTACT_PATHS]
+
+    vistos = set()
+    for contact_url in candidatos:
+        if contact_url in vistos:
+            continue
+        vistos.add(contact_url)
         try:
-            contact_url = urljoin(url, path)
-            email = _scrape_page(contact_url, base_domain, max(4, timeout // 2))
+            html = _fetch(contact_url, max(4, timeout // 2))
+            if not html:
+                continue
+            email = _parse_emails(html, base_domain)
             if email:
                 return email
         except Exception:
@@ -69,15 +91,34 @@ def extract_email_from_website(url: str, timeout: int = 8) -> str | None:
     return None
 
 
-def _scrape_page(url: str, base_domain: str, timeout: int) -> str | None:
+def _fetch(url: str, timeout: int) -> str | None:
     try:
         resp = requests.get(url, timeout=timeout, headers=_HEADERS,
                             allow_redirects=True)
         if resp.status_code != 200:
             return None
-        return _parse_emails(resp.text, base_domain)
+        return resp.text
     except Exception:
         return None
+
+
+def _find_contact_links(html: str, base_url: str, base_domain: str) -> list[str]:
+    """Links de la portada cuyo texto o href sugiere contacto/privacidad."""
+    if not _BS4:
+        return []
+    soup = BeautifulSoup(html, 'html.parser')
+    links = []
+    for a in soup.find_all('a', href=True):
+        href = a['href']
+        texto = (a.get_text() or '').lower()
+        if not any(k in href.lower() or k in texto for k in _LINK_KEYWORDS):
+            continue
+        full = urljoin(base_url, href)
+        if urlparse(full).netloc.lower().replace('www.', '') != base_domain:
+            continue
+        if full not in links:
+            links.append(full)
+    return links[:5]
 
 
 def _parse_emails(html: str, base_domain: str) -> str | None:
