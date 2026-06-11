@@ -1418,6 +1418,30 @@ def api_correos_templates():
     return jsonify({k: {'nombre': v['nombre'], 'subject': v['subject']}
                     for k, v in EMAIL_TEMPLATES.items()})
 
+@app.route('/api/correos/lista')
+def api_correos_lista():
+    """Lista cruda de prospectos_correo para revisión/depuración."""
+    try:
+        prospectos = get_data('prospectos_correo')
+        out = []
+        for p in prospectos:
+            seg = get_segmento(p)
+            out.append({
+                '_row':         p.get('_row'),
+                'empresa':      p.get('Empresa', p.get('Nombre', '')),
+                'giro':         p.get('Giro', ''),
+                'grupo':        seg['grupo'],
+                'ciudad':       p.get('Ciudad', ''),
+                'sitio_web':    p.get('Sitio Web', ''),
+                'resenas':      p.get('Reseñas', ''),
+                'correo_email': p.get('Correo Email', ''),
+                'email_estado': p.get('Email Estado', ''),
+                'apto_email':   seg['apto_email'],
+            })
+        return jsonify({'total': len(out), 'prospectos': out})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/correos/enriquecer', methods=['POST'])
 def api_correos_enriquecer_uno():
     """Enriquece el email de un único prospecto por _row."""
