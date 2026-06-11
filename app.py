@@ -426,6 +426,39 @@ def _relevancia(r):
 # Details, quedándonos con los de más reseñas (los más establecidos).
 MAX_DETALLES_POR_CATEGORIA = 8
 
+# Cadenas nacionales/internacionales y centros comerciales que el Text
+# Search devuelve con muchas reseñas (encajan en el filtro min_resenas) pero
+# no son el ICP de Supratech (distribuidoras/negocios independientes de 5 a
+# 50 empleados). Se filtran por nombre antes de gastar en Place Details.
+# Coincidencia por substring, sobre el nombre en minúsculas.
+_CADENAS_EXCLUIDAS = [
+    # Autoservicio / supermercados
+    'walmart', 'bodega aurrera', 'soriana', 'chedraui', 'comercial mexicana',
+    'costco', "sam's club", 'sams club', 'h-e-b', 'heb ', 'city market',
+    'la comer', 'fresko', 'mercado metropolitano',
+    # Conveniencia
+    'oxxo', '7-eleven', '7 eleven', 'circle k', 'extra ',
+    # Tiendas departamentales / mayoreo
+    'liverpool', 'sears', 'sanborns', 'suburbia', 'coppel', 'elektra',
+    'famsa', 'office depot', 'office max', 'best buy',
+    # Vinaterías / licorerías
+    'la europea', 'la castellana',
+    # Mueblerías
+    'dico', 'crea muebles',
+    # Electrónica / cómputo
+    'steren', 'radioshack', 'macstore',
+    # Ópticas
+    'devlyn', 'opticas gmo', 'óptica gmo',
+    # Mascotas
+    'petco', "petland", "pet's land", 'pets land',
+    # Jugueterías / regalos
+    'fantasias miguel', 'fantasías miguel', 'juguetron', 'julio cepeda',
+    # Centros comerciales / plazas / outlets (no son un solo negocio)
+    'plaza mayor', 'centro max', 'plaza del zapato', 'galerias el triunfo',
+    'galerías el triunfo', 'factory shops', 'zona piel', 'technology square',
+    'plaza calzar y vestir', 'galería del zapato', 'galeria del zapato',
+]
+
 def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos, campo_requerido='formatted_phone_number', min_resenas=100):
     query = f'{categoria} en {ciudad} Mexico'
     resp  = gmaps.places(query=query)
@@ -441,7 +474,10 @@ def _buscar_negocios(gmaps, categoria, ciudad, nombres_vistos, campo_requerido='
         ids_vistos.add(pid)
         if (place.get('user_ratings_total', 0) or 0) < min_resenas:
             continue
-        if place.get('name', '').strip().lower() in nombres_vistos:
+        nombre_lower = place.get('name', '').strip().lower()
+        if nombre_lower in nombres_vistos:
+            continue
+        if any(cadena in nombre_lower for cadena in _CADENAS_EXCLUIDAS):
             continue
         candidatos.append(place)
 
