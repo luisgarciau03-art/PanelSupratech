@@ -365,10 +365,10 @@ IMPORT_CHANNELS = {
         'log_sheet':       'importaciones_correo',
         'categorias':      CATEGORIAS_CORREO,
         'campo_requerido': 'website',  # debe tener sitio web
-        # 300 reseñas = tamaño "mediano" (_get_tamano). Un prospecto frío
-        # solo es apto_email si es mediano/grande, así que filtrar por
-        # debajo de eso descarta candidatos que nunca recibirían campaña.
-        'min_resenas':     300,
+        # Las distribuidoras B2B rara vez acumulan muchas reseñas en Google
+        # (no son negocios de cara al consumidor) — 300 dejaba casi todo
+        # afuera. 100 iguala el umbral de Llamadas.
+        'min_resenas':     100,
     },
 }
 
